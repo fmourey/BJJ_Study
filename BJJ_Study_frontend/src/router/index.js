@@ -1,11 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import VideoDetailView from '../views/VideoDetailView.vue'
+import SearchVideoView from '../views/SearchVideoView.vue'
 
 const routes = [
   {
     path: '/video/:id',
     name: 'video-detail',
     component: VideoDetailView
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: SearchVideoView
   }
 ]
 
