@@ -58,12 +58,18 @@
             Chargement...
         </div>
     </main>
+
+    <aside class="related-videos">
+        <h2>Vidéos similaires</h2>
+        <VideoCard :video="video" v-for="n in 10" :key="n" />
+    </aside>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
+import VideoCard from "../components/VideoCard.vue";
 
 const route = useRoute();
 const video = ref(null);
@@ -242,4 +248,15 @@ const duration = computed(() => {
     border-top: 1px solid #eee;
     padding-top: 0.5rem;
 }
+
+.related-videos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr));
+  gap: 16px;
+}
+
+.related-videos h2 {
+  grid-column: 1 / -1;
+}
+
 </style>
