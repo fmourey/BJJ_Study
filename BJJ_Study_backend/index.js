@@ -55,4 +55,23 @@ app.get("/api/videos", async (req, res) => {
     res.json(videos);
 });
 
+app.get("/api/search", async (req, res) => {
+    try {
+        const { whereClause, params } = req.query;
+        
+        if (!whereClause) {
+            return res.status(400).json({ error: "whereClause is required" });
+        }
+
+        const query = `SELECT * FROM videos WHERE ${whereClause}`;
+        const parsedParams = params ? JSON.parse(params) : [];
+        const videos = await db.all(query, parsedParams);
+        res.json(videos);
+    } catch (error) {
+        console.error("Search error:", error);
+        res.status(500).json({ error: "Search failed", details: error.message });
+    }
+});
+
+
 app.listen(PORT, () => console.log(`✅ Serveur démarré sur http://localhost:${PORT}`));
