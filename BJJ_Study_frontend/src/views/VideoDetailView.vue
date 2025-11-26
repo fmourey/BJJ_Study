@@ -1,10 +1,7 @@
 <template>
     <div class="page">
 
-    <header class="header">
-        <div class="home">Accueil</div>
-        <button class="login">Connexion</button>
-    </header>
+    <Header />
 
     <main class="content">
         <fieldset v-if="video" class="video-card">
@@ -61,7 +58,7 @@
 
     <aside class="related-videos">
         <h2>Vidéos similaires</h2>
-        <VideoCard :video="video" v-for="n in 10" :key="n" />
+        <VideoCard v-for="v in results" :key="v.id" :video="v" />
     </aside>
     </div>
 </template>
@@ -70,6 +67,10 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import VideoCard from "../components/VideoCard.vue";
+import Header from '../components/Header.vue';
+import { useSearch } from "../components/Search.vue";
+const { selectedTags, selectedPosition, executeSearch, results } = useSearch();
+
 
 const route = useRoute();
 const video = ref(null);
@@ -84,6 +85,36 @@ onMounted(async () => {
     }
 
     video.value = data;
+
+    selectedTags.value = [];
+    selectedPosition.value = null;
+
+    await executeSearch();
+
+    let allVideos = results.value;
+
+    allVideos = allVideos.filter(v => v.id !== data.id);
+
+    results.value = allVideos
+    .map(v => {
+        const vTags = typeof v.tags === "string"
+        ? v.tags.split(",").map(t => t.trim())
+        : v.tags || [];
+
+        const dTags = data.tags || [];
+
+        let score = 0;
+
+        if (v.position === data.position) score += 2;
+
+        const commonTags = vTags.filter(t => dTags.includes(t));
+        score += commonTags.length;
+
+        return { ...v, score };
+    })
+    .filter(v => v.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
 });
 
 const embedUrl = computed(() => {
