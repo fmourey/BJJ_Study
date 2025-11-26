@@ -30,14 +30,6 @@ let db;
         );
     `);
 
-    await db.run(`
-    INSERT INTO videos (title, youtube_url, position, tags, start_time, end_time, description)
-    VALUES
-    ('Armbar depuis la garde fermée', 'https://www.youtube.com/watch?v=23enzBqgkhs', 'Closed Guard', 'submission, armbar, fundamentals', '00:08', '00:11', 'Démonstration détaillée du armbar depuis la garde fermée, avec mise en place de la hanche et contrôle du bras.'),
-    ('Passage de garde knee cut', 'https://www.youtube.com/watch?v=f5AlDfzItGE', 'Guard Pass', 'guard, knee-cut, passing', '02:36', '02:42', 'Un passage de garde classique en knee cut, avec explication du contrôle de la hanche et du genou opposé.'),
-    ('Sweep en butterfly guard', 'https://www.youtube.com/watch?v=9wAGX1JH5yo', 'Butterfly Guard', 'sweep, guard, garcia', '03:31', '03:34', 'Variation du sweep en butterfly guard utilisant un levier avec le crochet et une poussée du bras opposé.');
-    `);
-
 
 })();
 

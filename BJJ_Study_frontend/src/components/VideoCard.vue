@@ -1,28 +1,36 @@
 <template>
-    <fieldset v-if="video" class="video-mini-card">
+  <div>
+    <router-link
+      v-if="video && video.id"
+      :to="{ name: 'video-detail', params: { id: video.id } }"
+      class="video-card-link"
+    >
+      <fieldset class="video-mini-card">
         <div class="video-image">
-            <img
-                class="video-player thumbnail"
-                :src="thumbnailUrl"
-                :alt="video.title"
-            />
+          <img
+            class="video-player thumbnail"
+            :src="thumbnailUrl"
+            :alt="video.title"
+          />
         </div>
 
         <div class="video-info">
-            <div class="author">
-                <div class="pseudo">Pseudo</div>
-            </div>
-            <h1 class="title">{{video.title}}</h1>
+          <div class="author">
+            <div class="pseudo">Pseudo</div>
+          </div>
+          <h1 class="title">{{ video.title }}</h1>
         </div>
 
         <div class="duration-meta">
-            <span>🕙{{duration}}</span>
+          <span>🕙{{ duration }}</span>
         </div>
-        </fieldset>
+      </fieldset>
+    </router-link>
 
-        <div v-else>
-            Error loading video...
-        </div>
+    <div v-else>
+      Error loading video...
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -115,6 +123,18 @@ const duration = computed(() => {
   font-size: 0.75rem;
   padding: 0 4px 6px;
   color: #444;
+}
+
+.video-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.video-card-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.18);
+  border-radius: 12px;
 }
 
 </style>

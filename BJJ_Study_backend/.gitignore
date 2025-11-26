@@ -41,6 +41,3 @@ Thumbs.db
 jest-html-reporters-*.html
 *.test.js
 *.spec.js
-
-#bd
-videos.db
