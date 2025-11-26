@@ -16,7 +16,7 @@
         <button @click="removeTag(tag)" class="remove-btn">&times;</button>
       </div>
     </div>
-
+    <div class="filters-container">
     <div class="filters-container">
       <div class="filter-group">
         <label>Position</label>
@@ -60,7 +60,6 @@
 
       <button @click="clearFilters" class="clear-btn">Clear Filters</button>
     </div>
-
     <div v-if="loading" class="loading">
       Searching...
     </div>
@@ -68,7 +67,6 @@
     <div v-if="error" class="error">
       {{ error }}
     </div>
-
     <div v-if="!loading && results.length > 0" class="results">
       <h3>{{ results.length }} result(s) found</h3>
       <div class="video-grid">
@@ -82,7 +80,6 @@
         </router-link>
       </div>
     </div>
-
     <div v-if="!loading && results.length === 0 && !error" class="no-results">
       No videos found. Try adjusting your filters.
     </div>
