@@ -17,7 +17,6 @@
       </div>
     </div>
     <div class="filters-container">
-    <div class="filters-container">
       <div class="filter-group">
         <label>Position</label>
         <div class="dropdown">
@@ -70,14 +69,7 @@
     <div v-if="!loading && results.length > 0" class="results">
       <h3>{{ results.length }} result(s) found</h3>
       <div class="video-grid">
-        <router-link 
-          v-for="video in results" 
-          :key="video.id"
-          :to="{ name: 'video-detail', params: { id: video.id } }"
-          class="video-card-link"
-        >
-          <VideoCard :video="video" />
-        </router-link>
+        <VideoCard v-for="video in results" :key="video.id" :video="video" />
       </div>
     </div>
     <div v-if="!loading && results.length === 0 && !error" class="no-results">

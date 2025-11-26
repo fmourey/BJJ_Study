@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import VideoCard from "../components/VideoCard.vue";
 import Header from '../components/Header.vue';
@@ -75,9 +75,10 @@ const { selectedTags, selectedPosition, executeSearch, results } = useSearch();
 const route = useRoute();
 const video = ref(null);
 
-onMounted(async () => {
-    const res = await fetch(`http://localhost:3000/api/videos/${route.params.id}`);
+async function loadVideo(id) {
+    if (!id) return;
 
+    const res = await fetch(`http://localhost:3000/api/videos/${id}`);
     const data = await res.json();
 
     if (data.tags && typeof data.tags === "string") {
@@ -86,6 +87,7 @@ onMounted(async () => {
 
     video.value = data;
 
+    // Reset search filters and refresh list to compute related videos
     selectedTags.value = [];
     selectedPosition.value = null;
 
@@ -96,25 +98,36 @@ onMounted(async () => {
     allVideos = allVideos.filter(v => v.id !== data.id);
 
     results.value = allVideos
-    .map(v => {
-        const vTags = typeof v.tags === "string"
-        ? v.tags.split(",").map(t => t.trim())
-        : v.tags || [];
+        .map(v => {
+            const vTags = typeof v.tags === "string"
+                ? v.tags.split(",").map(t => t.trim())
+                : v.tags || [];
 
-        const dTags = data.tags || [];
+            const dTags = data.tags || [];
 
-        let score = 0;
+            let score = 0;
 
-        if (v.position === data.position) score += 2;
+            if (v.position === data.position) score += 2;
 
-        const commonTags = vTags.filter(t => dTags.includes(t));
-        score += commonTags.length;
+            const commonTags = vTags.filter(t => dTags.includes(t));
+            score += commonTags.length;
 
-        return { ...v, score };
-    })
-    .filter(v => v.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8);
+            return { ...v, score };
+        })
+        .filter(v => v.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8);
+}
+
+onMounted(() => {
+    loadVideo(route.params.id);
+});
+
+// Re-load video when the route id changes (e.g. clicking a related video)
+watch(() => route.params.id, (newId, oldId) => {
+    if (newId && newId !== oldId) {
+        loadVideo(newId);
+    }
 });
 
 const embedUrl = computed(() => {
