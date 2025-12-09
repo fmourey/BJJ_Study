@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest --config vitest.config.backend.js",
     "start": "node index.js"
   },
   "keywords": [],
@@ -17,5 +17,10 @@
     "express": "^5.1.0",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.15",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.15"
   }
 }
