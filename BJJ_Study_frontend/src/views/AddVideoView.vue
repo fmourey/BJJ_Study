@@ -290,7 +290,7 @@ function timeToSeconds(time) {
   return 0
 }
 
-function handleSubmit() {
+/*function handleSubmit() {
   if (activeTab.value === 'youtube' && !youtubeUrl.value) {
     alert('Veuillez entrer une URL YouTube')
     return
@@ -344,7 +344,73 @@ function handleSubmit() {
   showYoutubePlayer.value = false
   showLocalPlayer.value = false
   activeTab.value = 'youtube'
+
+*/
+async function handleSubmit() {
+  // Validation
+  if (activeTab.value === 'youtube' && !youtubeUrl.value) {
+    alert('Veuillez entrer une URL YouTube')
+    return
+  }
+  if (activeTab.value === 'local' && !videoFile.value) {
+    alert('Veuillez sélectionner un fichier vidéo')
+    return
+  }
+  if (!title.value) {
+    alert('Veuillez entrer un titre')
+    return
+  }
+  
+  // Préparer les données selon la source
+  const videoData = {
+    title: title.value,
+    youtube_url: activeTab.value === 'youtube' ? youtubeUrl.value : '',
+    local_file: activeTab.value === 'local' ? videoFile.value.name : '',
+    position: position.value,
+    tags: tags.value.split(',').map(x => x.trim()).filter(Boolean),
+    start_time: startTime.value || '0:00',
+    end_time: endTime.value || '0:00',
+    description: description.value
+  }
+  
+  try {
+    const response = await fetch('http://localhost:3000/api/videos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(videoData)
+    })
+
+    const result = await response.json()
+    
+    if (response.ok) {
+      alert('Vidéo ajoutée avec succès !')
+      console.log('Vidéo créée:', result.video)
+      
+      // Reset...
+      youtubeUrl.value = ''
+      videoFile.value = null
+      localThumbnail.value = null
+      localVideoUrl.value = null
+      title.value = ''
+      position.value = ''
+      tags.value = ''
+      startTime.value = ''
+      endTime.value = ''
+      difficulty.value = ''
+      description.value = ''
+      showYoutubePlayer.value = false
+      showLocalPlayer.value = false
+      activeTab.value = 'youtube'
+    } else {
+      alert(`Erreur : ${result.error}`)
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi:', error)
+    alert('Erreur de connexion au serveur')
+  }
 }
+
+
 </script>
 
 <style scoped>

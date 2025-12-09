@@ -18,17 +18,19 @@ export async function initDB(filename = "./videos.db") {
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS videos (
-      id INTEGER PRIMARY KEY,
-      title TEXT NOT NULL,
-      youtube_url TEXT NOT NULL,
-      position TEXT,
-      tags TEXT,
-      start_time TEXT,
-      end_time TEXT,
-      description TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-  `);
+        id INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        youtube_url TEXT,
+        local_file TEXT,
+        position TEXT,
+        tags TEXT,
+        start_time TEXT,
+        end_time TEXT,
+        description TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+        );
+        
+    `);
 
   return db;
 }
@@ -87,6 +89,35 @@ app.get("/api/search", async (req, res) => {
     } catch (error) {
         console.error("Search error:", error);
         res.status(500).json({ error: "Search failed", details: error.message });
+    }
+});
+
+app.post("/api/videos", async (req, res) => {
+    try {
+        const { title, youtube_url, position, tags, start_time, end_time, description } = req.body;
+
+        // Validation : seulement le titre est obligatoire
+        if (!title) {
+            return res.status(400).json({ error: "Le titre est requis" });
+        }
+
+        const tagsString = Array.isArray(tags) ? tags.join(", ") : tags || "";
+
+        const result = await db.run(
+            `INSERT INTO videos (title, youtube_url, position, tags, start_time, end_time, description) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [title, youtube_url || '', position, tagsString, start_time || "0:00", end_time || "0:00", description || ""]
+        );
+
+        const newVideo = await db.get("SELECT * FROM videos WHERE id = ?", [result.lastID]);
+
+        res.status(201).json({ 
+            message: "Vidéo ajoutée avec succès", 
+            video: newVideo 
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'ajout:", error);
+        res.status(500).json({ error: "Erreur serveur", details: error.message });
     }
 });
 
