@@ -61,13 +61,13 @@ describe("API vidéos", () => {
         expect(res.body.error).toBe("Vidéo non trouvée");
     });
 
-    // it("GET /api/search filtre les vidéos", async () => {
-    //     const res = await request(app).get("/api/search");
+    it("GET /api/search filtre les vidéos", async () => {
+        const res = await request(app).get("/api/search");
 
-    //     expect(res.status).toBe(200);
-    //     expect(res.body.length).toBe(1);
-    //     expect(res.body[0].tags).toContain("kimura");
-    // });
+        expect(res.status).toBe(200);
+        expect(res.body.length).toBe(2);
+        expect(res.body[0].tags).toContain("kimura");
+    });
 
     it("GET /api/search?tags=Guard retourne la vidéo filtrée", async () => {
         const res = await request(app).get("/api/search").query({ position: "Guard" });
@@ -85,13 +85,11 @@ describe("API vidéos", () => {
         expect(res.body[0].tags).toContain("kimura");
     });
 
-    // it("GET /api/search?maxVideoLength=20 retourne la vidéo filtrée", async () => {
-    //     const res = await request(app).get("/api/search").query({ maxVideoLength: 20 });
+    it("GET /api/search?maxVideoLength=20 retourne la vidéo filtrée", async () => {
+        const res = await request(app).get("/api/search").query({ maxVideoLength: 20 });
 
-    //     expect(res.status).toBe(200);
-    //     expect(res.body.length).toBe(1);
-    //     expect(res.body[0].position).toBe("Triangle");
-    //     const duration = (new Date(`1970-01-01T00:${res.body[0].end_time}Z`) - new Date(`1970-01-01T00:${res.body[0].start_time}Z`)) / 1000;
-    //     expect(duration).toBeLessThanOrEqual(20);
-    // });
+        expect(res.status).toBe(200);
+        expect(res.body.length).toBe(1);
+        expect(res.body[0].position).toBe("Triangle");
+    });
 });
