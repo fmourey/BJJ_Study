@@ -10,7 +10,7 @@ export function useSearch() {
     'Butterfly Guard'
   ]);
 
-  const maxVideoLength = ref(3600);
+  const maxVideoLength = ref(300);
   const loading = ref(false);
   const error = ref(null);
   const results = ref([]);
@@ -58,7 +58,7 @@ export function useSearch() {
     } catch (err) {
       error.value = err.message;
       results.value = [];
-      throw err;
+      // Don't re-throw - error is already handled and stored in error.value
     } finally {
       loading.value = false;
     }
@@ -81,7 +81,7 @@ export function useSearch() {
   const clearFilters = () => {
     selectedTags.value = [];
     selectedPosition.value = null;
-    maxVideoLength.value = 600;
+    maxVideoLength.value = 300;
     results.value = [];
     error.value = null;
   };

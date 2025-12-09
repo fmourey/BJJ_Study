@@ -6,7 +6,6 @@ describe('Search.vue composable - useSearch()', () => {
 
   beforeEach(() => {
     search = useSearch()
-    // Reset fetch mock
     global.fetch = vi.fn()
   })
 
@@ -75,7 +74,6 @@ describe('Search.vue composable - useSearch()', () => {
       
       expect(filters.tags).toEqual(['Kimura', 'Armbar'])
       expect(filters.position).toBeUndefined()
-      // maxVideoLength has default value of 3600
       expect(filters.maxVideoLength).toBe(3600)
     })
 
@@ -85,7 +83,6 @@ describe('Search.vue composable - useSearch()', () => {
       
       expect(filters.tags).toBeUndefined()
       expect(filters.position).toBe('Closed Guard')
-      // maxVideoLength has default value of 3600
       expect(filters.maxVideoLength).toBe(3600)
     })
 
@@ -173,11 +170,7 @@ describe('Search.vue composable - useSearch()', () => {
       )
 
       search.addTag('Kimura')
-      try {
-        await search.executeSearch()
-      } catch (e) {
-        // Error is expected
-      }
+      await search.executeSearch()
 
       expect(search.error.value).toBe('Search failed: Server Error')
       expect(search.results.value).toEqual([])

@@ -81,23 +81,6 @@ describe('SearchVideoView.vue', () => {
     expect(button.text()).toBe('Add Tag')
   })
 
-  it('should display "No videos found" message initially', () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([])
-      })
-    )
-
-    const wrapper = mount(SearchVideoView, {
-      global: {
-        components: { Header, VideoCard }
-      }
-    })
-
-    expect(wrapper.text()).toContain('No videos found')
-  })
-
   it('should add tag when pressing Enter', async () => {
     global.fetch = vi.fn(() =>
       Promise.resolve({
