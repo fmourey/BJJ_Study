@@ -50,9 +50,9 @@
         <input
           type="range"
           v-model.number="maxVideoLength"
-          min="0"
-          max="3600"
-          step="60"
+          min="1"
+          max="301"
+          step="15"
           @input="executeSearch"
         />
       </div>
@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useSearch } from '../components/Search.vue';
 import Header from '../components/Header.vue';
 import VideoCard from '../components/VideoCard.vue';
@@ -101,6 +101,10 @@ const {
   setPosition
 } = useSearch();
 
+onMounted(() => {
+  executeSearch();
+});
+
 const handleAddTag = () => {
   if (tagInput.value.trim()) {
     addTag(tagInput.value);
@@ -113,8 +117,9 @@ const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60);
   const secs = seconds % 60;
   if (minutes === 0) return `${secs}s`;
-  if (secs === 0) return `${minutes}m`;
-  return `${minutes}m ${secs}s`;
+  if (secs === 0) return `${minutes}:00`;
+  if (secs < 10) return `${minutes}:0${secs}`;
+  return `${minutes}:${secs}`;
 };
 </script>
 

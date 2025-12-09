@@ -73,8 +73,10 @@ app.get("/api/search", async (req, res) => {
         if (maxVideoLength) {
             const maxLength = parseInt(maxVideoLength, 10);
             if (!isNaN(maxLength) && maxLength > 0) {
+                // Convert MM:SS format to seconds: (substr(start, 0, pos(':')) * 60) + substr(start, pos(':')+1)
+                // For end_time: minutes * 60 + seconds, minus same for start_time
                 conditions.push(
-                    "CAST((julianday(end_time) - julianday(start_time)) * 86400 AS INTEGER) <= ?"
+                    "((CAST(substr(end_time, 1, instr(end_time, ':') - 1) AS INTEGER) * 60 + CAST(substr(end_time, instr(end_time, ':') + 1) AS INTEGER)) - (CAST(substr(start_time, 1, instr(start_time, ':') - 1) AS INTEGER) * 60 + CAST(substr(start_time, instr(start_time, ':') + 1) AS INTEGER))) <= ?"
                 );
                 params.push(maxLength);
             }
