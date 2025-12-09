@@ -15,34 +15,11 @@ export function useSearch() {
   const error = ref(null);
   const results = ref([]);
 
-  const buildSQLQuery = () => {
-    const conditions = [];
-    const params = [];
-
-    if (selectedTags.value.length > 0) {
-      const tagConditions = selectedTags.value.map(() => "tags LIKE ?");
-      conditions.push(`(${tagConditions.join(' OR ')})`);
-      selectedTags.value.forEach(tag => {
-        params.push(`%${tag}%`);
-      });
-    }
-
-    if (selectedPosition.value) {
-      conditions.push("position = ?");
-      params.push(selectedPosition.value);
-    }
-    if (maxVideoLength.value) {
-      conditions.push(
-        "CAST((julianday(end_time) - julianday(start_time)) * 86400 AS INTEGER) <= ?"
-      );
-      params.push(maxVideoLength.value);
-    }
-
-    const whereClause = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
-
+  const buildSearchFilters = () => {
     return {
-      whereClause,
-      params
+      tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
+      position: selectedPosition.value || undefined,
+      maxVideoLength: maxVideoLength.value || undefined
     };
   };
 
@@ -51,12 +28,17 @@ export function useSearch() {
     error.value = null;
 
     try {
-      const { whereClause, params } = buildSQLQuery();
-
-      const queryParams = new URLSearchParams({
-        whereClause,
-        params: JSON.stringify(params)
-      });
+      const filters = buildSearchFilters();
+      const queryParams = new URLSearchParams();
+      if (filters.tags) {
+        filters.tags.forEach(tag => queryParams.append('tags', tag));
+      }
+      if (filters.position) {
+        queryParams.set('position', filters.position);
+      }
+      if (filters.maxVideoLength) {
+        queryParams.set('maxVideoLength', filters.maxVideoLength);
+      }
 
       const response = await fetch(`http://localhost:3000/api/search?${queryParams}`, {
         method: 'GET',
@@ -117,7 +99,7 @@ export function useSearch() {
     error,
     results,
 
-    buildSQLQuery,
+    buildSearchFilters,
     executeSearch,
     addTag,
     removeTag,
