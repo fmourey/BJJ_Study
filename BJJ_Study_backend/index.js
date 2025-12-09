@@ -9,29 +9,29 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-let db;
-(async () => {
-    db = await open({
-        filename: "./videos.db",
-        driver: sqlite3.Database,
-    });
+export let db;
+export async function initDB(filename = "./videos.db") {
+  db = await open({
+    filename,
+    driver: sqlite3.Database,
+  });
 
-    await db.exec(`
+  await db.exec(`
     CREATE TABLE IF NOT EXISTS videos (
-        id INTEGER PRIMARY KEY,
-        title TEXT NOT NULL,
-        youtube_url TEXT NOT NULL,
-        position TEXT,
-        tags TEXT,
-        start_time TEXT,
-        end_time TEXT,
-        description TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
-        );
-    `);
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL,
+      youtube_url TEXT NOT NULL,
+      position TEXT,
+      tags TEXT,
+      start_time TEXT,
+      end_time TEXT,
+      description TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
 
-
-})();
+  return db;
+}
 
 
 app.get("/api/videos/:id", async (req, res) => {
@@ -66,4 +66,12 @@ app.get("/api/search", async (req, res) => {
 });
 
 
-app.listen(PORT, () => console.log(`✅ Serveur démarré sur http://localhost:${PORT}`));
+if (!process.env.VITEST) {
+  initDB().then(() => {
+    app.listen(PORT, () =>
+      console.log(`✅ Serveur démarré sur http://localhost:${PORT}`)
+    );
+  });
+}
+
+export default app;
