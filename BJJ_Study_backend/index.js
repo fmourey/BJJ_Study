@@ -49,15 +49,40 @@ app.get("/api/videos", async (req, res) => {
 
 app.get("/api/search", async (req, res) => {
     try {
-        const { whereClause, params } = req.query;
+        const { tags, position, maxVideoLength } = req.query;
         
-        if (!whereClause) {
-            return res.status(400).json({ error: "whereClause is required" });
+        const conditions = [];
+        const params = [];
+
+        if (tags) {
+            const tagList = Array.isArray(tags) ? tags : [tags];
+            if (tagList.length > 0) {
+                const tagConditions = tagList.map(() => "tags LIKE ?");
+                conditions.push(`(${tagConditions.join(' OR ')})`);
+                tagList.forEach(tag => {
+                    params.push(`%${tag}%`);
+                });
+            }
         }
 
+        if (position) {
+            conditions.push("position = ?");
+            params.push(position);
+        }
+
+        if (maxVideoLength) {
+            const maxLength = parseInt(maxVideoLength, 10);
+            if (!isNaN(maxLength) && maxLength > 0) {
+                conditions.push(
+                    "CAST((julianday(end_time) - julianday(start_time)) * 86400 AS INTEGER) <= ?"
+                );
+                params.push(maxLength);
+            }
+        }
+        const whereClause = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
         const query = `SELECT * FROM videos WHERE ${whereClause}`;
-        const parsedParams = params ? JSON.parse(params) : [];
-        const videos = await db.all(query, parsedParams);
+        
+        const videos = await db.all(query, params);
         res.json(videos);
     } catch (error) {
         console.error("Search error:", error);
