@@ -98,7 +98,6 @@ app.post("/api/videos", async (req, res) => {
     try {
         const { title, youtube_url, position, tags, start_time, end_time, description } = req.body;
 
-        // Validation : seulement le titre est obligatoire
         if (!title) {
             return res.status(400).json({ error: "Le titre est requis" });
         }

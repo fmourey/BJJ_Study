@@ -92,4 +92,72 @@ describe("API vidéos", () => {
         expect(res.body.length).toBe(1);
         expect(res.body[0].position).toBe("Triangle");
     });
+
+    it("GET /api/search avec une erreur 500", async () => {
+        const originalAll = db.all;
+        db.all = () => { throw new Error("DB error"); };
+
+        const res = await request(app).get("/api/search"); 
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe("Search failed");
+
+        db.all = originalAll;
+    });
+
+    it("POST /api/videos ajoute une nouvelle vidéo", async () => {
+        const newVideo = {
+            title: "Best Armbar Tutorial",
+            youtube_url: "https://www.youtube.com/watch?v=def456",
+            position: "Armbar",
+            tags: ["armbar", "butterfly guard"],
+            start_time: "2:50",
+            end_time: "3:00",
+            description: "Armbar depuis la garde papillon"
+        };
+        const res = await request(app).post("/api/videos").send(newVideo);
+
+        expect(res.status).toBe(201);
+        expect(res.body.video.title).toBe("Best Armbar Tutorial");
+        expect(res.body.video.position).toBe("Armbar");
+        expect(res.body.video.tags).toBe("armbar, butterfly guard");
+        expect(res.body.video.start_time).toBe("2:50");
+        expect(res.body.video.end_time).toBe("3:00");
+        expect(res.body.video.description).toBe("Armbar depuis la garde papillon");
+        const getRes = await request(app).get("/api/videos");
+        expect(getRes.body.length).toBe(3);
+    });
+
+    it("POST /api/videos sans titre retourne une erreur", async () => {
+        const newVideo = {
+            youtube_url: "https://www.youtube.com/watch?v=def456",
+            position: "Armbar",
+            tags: "armbar",
+            start_time: "2:50",
+            end_time: "3:00",
+            description: "Armbar depuis la garde papillon"
+        };
+        const res = await request(app).post("/api/videos").send(newVideo);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe("Le titre est requis");
+    });
+
+    it("POST /api/videos avec une erreur 500", async () => {
+        const originalRun = db.run;
+        db.run = () => { throw new Error("DB error"); };
+
+        const newVideo = {
+            title: "Best Armbar Tutorial",
+            youtube_url: "https://www.youtube.com/watch?v=def456",
+            position: "Armbar",
+            tags: "armbar",
+            start_time: "2:50",
+            end_time: "3:00",
+            description: "Armbar depuis la garde papillon"
+        };
+        const res = await request(app).post("/api/videos").send(newVideo);
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe("Erreur serveur");
+        db.run = originalRun;
+    });
+
 });
