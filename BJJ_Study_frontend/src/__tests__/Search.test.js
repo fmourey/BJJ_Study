@@ -74,7 +74,7 @@ describe('Search.vue composable - useSearch()', () => {
       
       expect(filters.tags).toEqual(['Kimura', 'Armbar'])
       expect(filters.position).toBeUndefined()
-      expect(filters.maxVideoLength).toBe(3600)
+      expect(filters.maxVideoLength).toBe(300)
     })
 
     it('should build filters with position only', () => {
@@ -83,27 +83,27 @@ describe('Search.vue composable - useSearch()', () => {
       
       expect(filters.tags).toBeUndefined()
       expect(filters.position).toBe('Closed Guard')
-      expect(filters.maxVideoLength).toBe(3600)
+      expect(filters.maxVideoLength).toBe(300)
     })
 
     it('should build filters with maxVideoLength only', () => {
-      search.maxVideoLength.value = 1800
+      search.maxVideoLength.value = 180
       const filters = search.buildSearchFilters()
       
       expect(filters.tags).toBeUndefined()
       expect(filters.position).toBeUndefined()
-      expect(filters.maxVideoLength).toBe(1800)
+      expect(filters.maxVideoLength).toBe(180)
     })
 
     it('should build filters with all parameters', () => {
       search.addTag('Kimura')
       search.setPosition('Guard Pass')
-      search.maxVideoLength.value = 2400
+      search.maxVideoLength.value = 240
       const filters = search.buildSearchFilters()
       
       expect(filters.tags).toEqual(['Kimura'])
       expect(filters.position).toBe('Guard Pass')
-      expect(filters.maxVideoLength).toBe(2400)
+      expect(filters.maxVideoLength).toBe(240)
     })
   })
 
@@ -150,7 +150,7 @@ describe('Search.vue composable - useSearch()', () => {
       search.addTag('Kimura')
       search.addTag('Armbar')
       search.setPosition('Guard Pass')
-      search.maxVideoLength.value = 1800
+      search.maxVideoLength.value = 180
 
       await search.executeSearch()
 
@@ -158,7 +158,7 @@ describe('Search.vue composable - useSearch()', () => {
       expect(callUrl).toContain('tags=Kimura')
       expect(callUrl).toContain('tags=Armbar')
       expect(callUrl).toContain('position=Guard+Pass')
-      expect(callUrl).toContain('maxVideoLength=1800')
+      expect(callUrl).toContain('maxVideoLength=180')
     })
 
     it('should handle search errors', async () => {
@@ -197,7 +197,7 @@ describe('Search.vue composable - useSearch()', () => {
     it('should clear all filters and results', () => {
       search.addTag('Kimura')
       search.setPosition('Guard Pass')
-      search.maxVideoLength.value = 1200
+      search.maxVideoLength.value = 120
       search.results.value = [{ id: 1 }]
       search.error.value = 'Some error'
 
@@ -205,7 +205,7 @@ describe('Search.vue composable - useSearch()', () => {
 
       expect(search.selectedTags.value).toEqual([])
       expect(search.selectedPosition.value).toBeNull()
-      expect(search.maxVideoLength.value).toBe(600)
+      expect(search.maxVideoLength.value).toBe(300)
       expect(search.results.value).toEqual([])
       expect(search.error.value).toBeNull()
     })

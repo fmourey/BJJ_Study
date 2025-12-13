@@ -385,8 +385,7 @@ describe('SearchVideoView.vue', () => {
       }
     })
 
-    // Default is 3600 seconds = 60 minutes
-    expect(wrapper.text()).toContain('60m')
+    expect(wrapper.text()).toContain('5:00')
   })
 
   it('should pass video data to VideoCard components', async () => {
