@@ -159,148 +159,422 @@ const duration = computed(() => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
 .page {
-    background-color: #f7f7f7;
-    min-height: 100vh;
-    font-family: 'Inter', sans-serif;
-    color: #333;
+  background: 
+    radial-gradient(ellipse at top right, rgba(220, 38, 38, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(0, 0, 0, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+  min-height: 100vh;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0f0f0f;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Effet tatami en background */
+.page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px),
+    repeating-linear-gradient(90deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: white;
-    border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
 .login {
-    background: black;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    cursor: pointer;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1f1f1f 100%);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  padding: 12px 28px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 13px;
+  box-shadow: 
+    0 4px 15px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  transition: all .25s ease;
 }
 
 .login:hover {
-    background: #333;
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 20px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  filter: brightness(1.05);
+}
+
+.login:active {
+  transform: translateY(0);
 }
 
 .content {
-    display: flex;
-    justify-content: center;
-    padding: 2rem;
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 2rem;
 }
 
+/* Card principale - Glassmorphism */
 .video-card {
-    width: 800px;
-    background: rgb(255, 255, 255);
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-    padding: 0;
+  width: 100%;
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 
+    0 12px 48px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+/* Bordure accent rouge */
+.video-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #dc2626, #b91c1c);
 }
 
 .video-player {
   width: calc(100% - 2rem);
-  height: 400px;
+  height: 500px;
   border: none;
-  border-radius: 12px;
-  margin: 1rem;
+  border-radius: 18px;
+  margin: 1.5rem 1rem 1rem 1rem;
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.12),
+    0 2px 8px rgba(0,0,0,0.08);
+  transition: all .3s ease;
+}
+
+.video-player:hover {
+  box-shadow: 
+    0 12px 48px rgba(0,0,0,0.15),
+    0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
 }
 
 .video-info {
-    padding: 1.5rem;
+  padding: 1.5rem 2rem 2rem 2rem;
 }
 
 .video-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(226, 232, 240, 0.5);
 }
 
 .video-main {
-    text-align: center;
+  text-align: center;
+  margin: 1.5rem 0;
 }
 
 .author {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 8px 16px;
+  background: rgba(248, 250, 252, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 50px;
+  transition: all .25s ease;
+}
+
+.author:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border: 2px solid white;
+}
+
+.pseudo {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 15px;
 }
 
 .likes {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 8px 16px;
+  background: rgba(254, 242, 242, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 50px;
+  font-weight: 600;
+  color: #991b1b;
+  font-size: 14px;
 }
 
 .like-button {
-    border: none;
-    background: none;
-    font-size: 1.3rem;
-    cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 
+    0 4px 12px rgba(220, 38, 38, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all .25s ease;
+}
+
+.like-button:hover {
+  transform: scale(1.15);
+  box-shadow: 
+    0 6px 20px rgba(220, 38, 38, 0.5),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.like-button:active {
+  transform: scale(1.05);
 }
 
 .title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-top: 0.8rem;
-    margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  color: #0f172a;
+  line-height: 1.3;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 }
 
 .tags {
-    justify-content: center;
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+  justify-content: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 1.5rem;
 }
 
 .tag {
-    background: #eee;
-    padding: 0.3rem 0.6rem;
-    border-radius: 8px;
-    font-size: 0.85rem;
+  background: rgba(241, 245, 249, 0.8);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  box-shadow: 
+    0 2px 12px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.5);
+  transition: all .25s ease;
+}
+
+.tag:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 
+    0 4px 16px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
 .tag-yellow {
-    background: #f9b233;
-    color: white;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+  box-shadow: 
+    0 4px 15px rgba(251, 191, 36, 0.3),
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.1);
+  border: none;
+}
+
+.tag-yellow:hover {
+  box-shadow: 
+    0 6px 20px rgba(251, 191, 36, 0.5),
+    inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
 .description {
-    font-size: 0.95rem;
-    color: #555;
-    line-height: 1.5;
-    margin-bottom: 1rem;
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(248, 250, 252, 0.5);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border-left: 4px solid #dc2626;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
 }
 
 .meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-    color: #777;
-    border-top: 1px solid #eee;
-    padding-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  border-top: 2px solid rgba(226, 232, 240, 0.5);
+  padding-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+.meta span {
+  padding: 6px 12px;
+  background: rgba(241, 245, 249, 0.6);
+  border-radius: 8px;
+}
+
+/* Section vidéos similaires */
 .related-videos {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(324px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
 }
 
 .related-videos h2 {
   grid-column: 1 / -1;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 1rem;
+  padding: 20px 28px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border-left: 6px solid #dc2626;
+  box-shadow: 
+    0 4px 20px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+/* État de chargement */
+.content > div {
+  padding: 50px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,1);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 1.5rem 1rem;
+  }
+
+  .video-card {
+    max-width: 100%;
+  }
+
+  .video-player {
+    height: 250px;
+  }
+
+  .video-info {
+    padding: 1rem 1.5rem 1.5rem 1.5rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .video-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .related-videos {
+    grid-template-columns: 1fr;
+    padding: 1.5rem 1rem;
+  }
+
+  .tags {
+    gap: 8px;
+  }
+
+  .tag {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .video-player {
+    height: 200px;
+    margin: 1rem 0.5rem;
+    width: calc(100% - 1rem);
+  }
+
+  .author,
+  .likes {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
 </style>
