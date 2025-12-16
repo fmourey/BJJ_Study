@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://aioli.ec-m.fr:1025'// http://localhost:3000'
+export const API_BASE_URL = 'http://laurier.aioli.ec-m.fr'// http://localhost:3000'
