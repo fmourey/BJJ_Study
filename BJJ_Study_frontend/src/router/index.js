@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import VideoDetailView from '../views/VideoDetailView.vue'
 import SearchVideoView from '../views/SearchVideoView.vue'
 import AddVideoView from '../views/AddVideoView.vue' 
@@ -22,7 +22,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(),
   routes
 })
 

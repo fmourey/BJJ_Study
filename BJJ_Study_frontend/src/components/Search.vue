@@ -1,5 +1,6 @@
 <script>
 import { ref } from 'vue';
+import { API_BASE_URL } from '@/config/api'
 
 export function useSearch() {
   const selectedTags = ref([]);
@@ -40,7 +41,7 @@ export function useSearch() {
         queryParams.set('maxVideoLength', filters.maxVideoLength);
       }
 
-      const response = await fetch(`http://localhost:3000/api/search?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/search?${queryParams}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
