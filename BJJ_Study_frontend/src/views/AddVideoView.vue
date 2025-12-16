@@ -147,6 +147,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { API_BASE_URL } from '@/config/api'
 
 const activeTab = ref('youtube')
 const youtubeUrl = ref('')
@@ -374,12 +375,11 @@ async function handleSubmit() {
   }
   
   try {
-    const response = await fetch('http://localhost:3000/api/videos', {
+    const response = await fetch(`${API_BASE_URL}/api/videos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(videoData)
+      body: JSON.stringify(videoData != null ? videoData : {})
     })
-
     const result = await response.json()
     
     if (response.ok) {

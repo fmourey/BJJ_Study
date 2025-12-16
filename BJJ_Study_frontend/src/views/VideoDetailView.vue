@@ -69,6 +69,7 @@ import { useRoute } from "vue-router";
 import VideoCard from "../components/VideoCard.vue";
 import Header from '../components/Header.vue';
 import { useSearch } from "../components/Search.vue";
+import { API_BASE_URL } from '@/config/api'
 const { selectedTags, selectedPosition, executeSearch, results } = useSearch();
 
 
@@ -78,7 +79,7 @@ const video = ref(null);
 async function loadVideo(id) {
     if (!id) return;
 
-    const res = await fetch(`http://localhost:3000/api/videos/${id}`);
+    const res = await fetch(`${API_BASE_URL}/api/videos/${id}`);
     const data = await res.json();
 
     if (data.tags && typeof data.tags === "string") {
@@ -87,7 +88,6 @@ async function loadVideo(id) {
 
     video.value = data;
 
-    // Reset search filters and refresh list to compute related videos
     selectedTags.value = [];
     selectedPosition.value = null;
 
