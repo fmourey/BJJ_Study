@@ -54,7 +54,9 @@
           min="1"
           max="301"
           step="15"
+          :style="{ background: sliderBackground }"
           @input="executeSearch"
+          
         />
       </div>
 
@@ -82,7 +84,7 @@
 <script setup>
 
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';  // ← NOUVELLE ligne à ajouter
 import { useSearch } from '../components/Search.vue';
 import Header from '../components/Header.vue';
@@ -120,6 +122,11 @@ const handleAddTag = () => {
 const navigateToAddVideo = () => {  
   router.push('/addvideo');
 };
+
+const sliderBackground = computed(() => {
+  const percent = ((maxVideoLength.value - 1) / (301 - 1)) * 100;
+  return `linear-gradient(to right, #dc2626 0%, #dc2626 ${percent}%, rgba(226, 232, 240, 0.6) ${percent}%, rgba(226, 232, 240, 0.6) 100%)`;
+});
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -432,11 +439,11 @@ button:active {
 input[type="range"] { 
   width: 100%;
   height: 10px;
-  background: linear-gradient(to right, 
+   /*background: linear-gradient(to right, 
     #dc2626 0%, 
     #dc2626 50%, 
     rgba(226, 232, 240, 0.6) 50%, 
-    rgba(226, 232, 240, 0.6) 100%);
+    rgba(226, 232, 240, 0.6) 100%);*/
   border-radius: 10px;
   outline: none;
   -webkit-appearance: none;
