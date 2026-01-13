@@ -8,6 +8,7 @@
         @keyup.enter="handleAddTag"
       />
       <button @click="handleAddTag" class="add-tag-btn">Add Tag</button>
+      <button @click="navigateToAddVideo" class="add-video-btn">Add Video</button>
     </div>
 
     <div v-if="selectedTags.length > 0" class="selected-tags">
@@ -79,11 +80,15 @@
 </template>
 
 <script setup>
+
+
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';  // ← NOUVELLE ligne à ajouter
 import { useSearch } from '../components/Search.vue';
 import Header from '../components/Header.vue';
 import VideoCard from '../components/VideoCard.vue';
 
+const router = useRouter();
 const tagInput = ref('');
 
 const {
@@ -112,6 +117,9 @@ const handleAddTag = () => {
     executeSearch();
   }
 };
+const navigateToAddVideo = () => {  
+  router.push('/addvideo');
+};
 
 const formatDuration = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -120,7 +128,9 @@ const formatDuration = (seconds) => {
   if (secs === 0) return `${minutes}:00`;
   if (secs < 10) return `${minutes}:0${secs}`;
   return `${minutes}:${secs}`;
-};
+};  
+;   
+
 </script>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
@@ -248,6 +258,29 @@ button:active {
     0 4px 15px rgba(0,0,0,0.2),
     inset 0 1px 0 rgba(255,255,255,0.1);
 }
+
+.add-video-btn {
+  padding: 16px 32px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 13px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  box-shadow: 
+    0 4px 20px rgba(220, 38, 38, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.add-video-btn:hover {
+  box-shadow: 
+    0 6px 25px rgba(220, 38, 38, 0.5),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
 
 .add-tag-btn:hover {
   box-shadow: 
