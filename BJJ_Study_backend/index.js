@@ -1,24 +1,13 @@
-import dotenv from "dotenv";
 import express from "express";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import cors from "cors";
-import { auth } from "express-oauth2-jwt-bearer";
-
-dotenv.config();
 
 const app = express();
 const PORT = 1025;
 
 app.use(cors());
 app.use(express.json());
-
-const checkJwt = auth({
-  audience: process.env.VITE_AUTH0_AUDIENCE,
-  issuerBaseURL: `https://${process.env.VITE_AUTH0_DOMAIN}/`, 
-  tokenSigningAlg: "RS256",
-});
-
 
 export let db;
 export async function initDB(filename = "./videos.db") {
@@ -28,21 +17,8 @@ export async function initDB(filename = "./videos.db") {
   });
 
   await db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
-        auth0_id TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE,
-        name TEXT NOT NULL,
-        surname TEXT,
-        pseudo TEXT,
-        birthdate TEXT,
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now'))
-    );
-
     CREATE TABLE IF NOT EXISTS videos (
         id INTEGER PRIMARY KEY,
-        owner_auth0_id TEXT NOT NULL,
         title TEXT NOT NULL,
         youtube_url TEXT,
         local_file TEXT,
@@ -51,11 +27,9 @@ export async function initDB(filename = "./videos.db") {
         start_time TEXT,
         end_time TEXT,
         description TEXT,
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (owner_auth0_id)
-            REFERENCES users(auth0_id)
-            ON DELETE CASCADE
-    );
+        created_at TEXT DEFAULT (datetime('now'))
+        );
+        
     `);
 
   return db;
@@ -120,165 +94,34 @@ app.get("/api/search", async (req, res) => {
     }
 });
 
-app.post("/api/videos", checkJwt, async (req, res) => {
-  try {
-    const { title, youtube_url, position, tags, start_time, end_time, description } = req.body;
+app.post("/api/videos", async (req, res) => {
+    try {
+        const { title, youtube_url, position, tags, start_time, end_time, description } = req.body;
 
-    if (!title) {
-      return res.status(400).json({ error: "Le titre est requis" });
+        if (!title) {
+            return res.status(400).json({ error: "Le titre est requis" });
+        }
+
+        const tagsString = Array.isArray(tags) ? tags.join(", ") : tags || "";
+
+        const result = await db.run(
+            `INSERT INTO videos (title, youtube_url, position, tags, start_time, end_time, description) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [title, youtube_url || '', position, tagsString, start_time || "0:00", end_time || "0:00", description || ""]
+        );
+
+        const newVideo = await db.get("SELECT * FROM videos WHERE id = ?", [result.lastID]);
+
+        res.status(201).json({ 
+            message: "Vidéo ajoutée avec succès", 
+            video: newVideo 
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'ajout:", error);
+        res.status(500).json({ error: "Erreur serveur", details: error.message });
     }
-
-    const owner_auth0_id = req.auth.payload.sub;
-    const tagsString = Array.isArray(tags) ? tags.join(", ") : tags || "";
-
-    const result = await db.run(
-      `INSERT INTO videos 
-       (title, youtube_url, position, tags, start_time, end_time, description, owner_auth0_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        title,
-        youtube_url || "",
-        position || "",
-        tagsString,
-        start_time || "0:00",
-        end_time || "0:00",
-        description || "",
-        owner_auth0_id,
-      ]
-    );
-
-    const video = await db.get(
-      "SELECT * FROM videos WHERE id = ?",
-      [result.lastID]
-    );
-
-    res.status(201).json(video);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
 });
 
-app.post("/api/users/profile", checkJwt, async (req, res) => {
-  try {
-    const { name, surname, pseudo, birthdate } = req.body;
-
-    const auth0_id = req.auth.payload.sub;
-    const email = req.auth.payload.email;
-
-    console.log("POST /api/users/profile called with auth0_id:", auth0_id);
-
-    if (!name) {
-      return res.status(400).json({ error: "Le prénom est requis" });
-    }
-
-    const existingUser = await db.get(
-      "SELECT * FROM users WHERE auth0_id = ?",
-      [auth0_id]
-    );
-
-    if (existingUser) {
-      await db.run(
-        `UPDATE users 
-         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, updated_at = datetime('now')
-         WHERE auth0_id = ?`,
-        [name, surname || "", pseudo || "", birthdate || "", auth0_id]
-      );
-
-      const updatedUser = await db.get(
-        "SELECT * FROM users WHERE auth0_id = ?",
-        [auth0_id]
-      );
-
-      return res.json(updatedUser);
-    }
-
-    const result = await db.run(
-      `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [auth0_id, email, name, surname || "", pseudo || "", birthdate || ""]
-    );
-
-    const newUser = await db.get(
-      "SELECT * FROM users WHERE id = ?",
-      [result.lastID]
-    );
-
-    res.status(201).json(newUser);
-  } catch (error) {
-    console.error("Erreur lors de la création/mise à jour du profil:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-
-app.get("/api/users/profile", checkJwt, async (req, res) => {
-  try {
-    const auth0_id = req.auth.payload.sub;
-
-    console.log("GET /api/users/profile called with auth0_id:", auth0_id);
-
-    const user = await db.get(
-      "SELECT * FROM users WHERE auth0_id = ?",
-      [auth0_id]
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        error: "Profil non trouvé. Veuillez compléter votre profil.",
-      });
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.error("Erreur lors de la récupération du profil:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-app.put("/api/users/profile", checkJwt, async (req, res) => {
-  try {
-    const { name, surname, pseudo, birthdate } = req.body
-    const auth0_id = req.auth.payload.sub
-    const email = req.auth.payload.email
-
-    if (!name) {
-      return res.status(400).json({ error: "Le prénom est requis" })
-    }
-
-    const existingUser = await db.get(
-      "SELECT * FROM users WHERE auth0_id = ?",
-      [auth0_id]
-    )
-
-    if (existingUser) {
-      // update
-      await db.run(
-        `UPDATE users
-         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, updated_at = datetime('now')
-         WHERE auth0_id = ?`,
-        [name, surname || "", pseudo || "", birthdate || "", auth0_id]
-      )
-    } else {
-      // create
-      await db.run(
-        `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [auth0_id, email, name, surname || "", pseudo || "", birthdate || ""]
-      )
-    }
-
-    const user = await db.get(
-      "SELECT * FROM users WHERE auth0_id = ?",
-      [auth0_id]
-    )
-
-    res.json(user)
-  } catch (error) {
-    console.error("Erreur profil:", error)
-    res.status(500).json({ error: "Erreur serveur" })
-  }
-});
 
 if (!process.env.VITEST) {
   initDB().then(() => {

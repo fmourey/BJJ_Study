@@ -40,3 +40,5 @@ Thumbs.db
 # --- Tests ---
 jest-html-reporters-*.html
 *.spec.js
+
+*.db
