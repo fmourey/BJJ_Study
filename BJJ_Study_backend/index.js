@@ -2,12 +2,20 @@ import express from "express";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+
 
 const app = express();
 const PORT = 1025;
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 export let db;
 export async function initDB(filename = "./videos.db") {
@@ -34,6 +42,22 @@ export async function initDB(filename = "./videos.db") {
 
   return db;
 }
+
+// 1) Pose  cookie
+app.get("/api/cookies/set", (req, res) => {
+  res.cookie("bjjstudy_session", "test123", {
+    httpOnly: true,
+    sameSite: "Lax",
+    secure: false, // en local http
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+  res.json({ ok: true });
+});
+
+// 2) Lit  cookies reçus
+app.get("/api/cookies/me", (req, res) => {
+  res.json({ cookies: req.cookies });
+});
 
 
 app.get("/api/videos/:id", async (req, res) => {
