@@ -44,6 +44,10 @@ export async function initDB(filename = "./videos.db") {
         surname TEXT,
         pseudo TEXT,
         birthdate TEXT,
+        profile_photo TEXT,
+        bjj_club TEXT,
+        bjj_belt TEXT,
+        bjj_city TEXT,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
     );
@@ -62,6 +66,20 @@ export async function initDB(filename = "./videos.db") {
         created_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (owner_auth0_id)
             REFERENCES users(auth0_id)
+            ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS video_likes (
+        id INTEGER PRIMARY KEY,
+        user_auth0_id TEXT NOT NULL,
+        video_id INTEGER NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        UNIQUE(user_auth0_id, video_id),
+        FOREIGN KEY (user_auth0_id)
+            REFERENCES users(auth0_id)
+            ON DELETE CASCADE,
+        FOREIGN KEY (video_id)
+            REFERENCES videos(id)
             ON DELETE CASCADE
     );
     `);
@@ -93,6 +111,52 @@ app.get("/api/videos/:id", async (req, res) => {
     res.json(video);
 });
 
+// Get video author info
+app.get("/api/videos/:id/author", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const video = await db.get(
+      "SELECT owner_auth0_id FROM videos WHERE id = ?",
+      [id]
+    );
+    
+    if (!video) {
+      return res.status(404).json({ error: "Vidéo non trouvée" });
+    }
+    
+    const author = await db.get(
+      "SELECT id, name, surname, pseudo, profile_photo FROM users WHERE auth0_id = ?",
+      [video.owner_auth0_id]
+    );
+    
+    if (!author) {
+      return res.status(404).json({ error: "Auteur non trouvé" });
+    }
+    
+    res.json(author);
+  } catch (error) {
+    console.error("Erreur lors de la récupération de l'auteur:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Get video likes count
+app.get("/api/videos/:id/likes-count", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await db.get(
+      "SELECT COUNT(*) as count FROM video_likes WHERE video_id = ?",
+      [id]
+    );
+    
+    res.json({ likesCount: result.count || 0 });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des likes:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
 
 app.get("/api/videos", async (req, res) => {
     const videos = await db.all("SELECT * FROM videos");
@@ -185,7 +249,7 @@ app.post("/api/videos", checkJwt, async (req, res) => {
 
 app.post("/api/users/profile", checkJwt, async (req, res) => {
   try {
-    const { name, surname, pseudo, birthdate } = req.body;
+    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city } = req.body;
 
     const auth0_id = req.auth.payload.sub;
     const email = req.auth.payload.email;
@@ -204,9 +268,9 @@ app.post("/api/users/profile", checkJwt, async (req, res) => {
     if (existingUser) {
       await db.run(
         `UPDATE users 
-         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, updated_at = datetime('now')
+         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, profile_photo = ?, bjj_club = ?, bjj_belt = ?, bjj_city = ?, updated_at = datetime('now')
          WHERE auth0_id = ?`,
-        [name, surname || "", pseudo || "", birthdate || "", auth0_id]
+        [name, surname || "", pseudo || "", birthdate || "", profile_photo || "", bjj_club || "", bjj_belt || "", bjj_city || "", auth0_id]
       );
 
       const updatedUser = await db.get(
@@ -218,9 +282,9 @@ app.post("/api/users/profile", checkJwt, async (req, res) => {
     }
 
     const result = await db.run(
-      `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [auth0_id, email, name, surname || "", pseudo || "", birthdate || ""]
+      `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [auth0_id, email, name, surname || "", pseudo || "", birthdate || "", profile_photo || "", bjj_club || "", bjj_belt || "", bjj_city || ""]
     );
 
     const newUser = await db.get(
@@ -262,7 +326,7 @@ app.get("/api/users/profile", checkJwt, async (req, res) => {
 
 app.put("/api/users/profile", checkJwt, async (req, res) => {
   try {
-    const { name, surname, pseudo, birthdate } = req.body
+    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city } = req.body
     const auth0_id = req.auth.payload.sub
     const email = req.auth.payload.email
 
@@ -276,19 +340,19 @@ app.put("/api/users/profile", checkJwt, async (req, res) => {
     )
 
     if (existingUser) {
-      // update
+      // update - incluons aussi l'email pour s'assurer qu'il est à jour
       await db.run(
         `UPDATE users
-         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, updated_at = datetime('now')
+         SET name = ?, surname = ?, pseudo = ?, birthdate = ?, profile_photo = ?, bjj_club = ?, bjj_belt = ?, bjj_city = ?, email = ?, updated_at = datetime('now')
          WHERE auth0_id = ?`,
-        [name, surname || "", pseudo || "", birthdate || "", auth0_id]
+        [name, surname || null, pseudo || null, birthdate || null, profile_photo || null, bjj_club || null, bjj_belt || null, bjj_city || null, email || null, auth0_id]
       )
     } else {
       // create
       await db.run(
-        `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [auth0_id, email, name, surname || "", pseudo || "", birthdate || ""]
+        `INSERT INTO users (auth0_id, email, name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [auth0_id, email || null, name, surname || null, pseudo || null, birthdate || null, profile_photo || null, bjj_club || null, bjj_belt || null, bjj_city || null]
       )
     }
 
@@ -301,6 +365,115 @@ app.put("/api/users/profile", checkJwt, async (req, res) => {
   } catch (error) {
     console.error("Erreur profil:", error)
     res.status(500).json({ error: "Erreur serveur" })
+  }
+});
+
+// Get user's published videos
+app.get("/api/users/videos/published", checkJwt, async (req, res) => {
+  try {
+    const auth0_id = req.auth.payload.sub;
+
+    const videos = await db.all(
+      "SELECT * FROM videos WHERE owner_auth0_id = ? ORDER BY created_at DESC",
+      [auth0_id]
+    );
+
+    res.json(videos);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des vidéos:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Get user's liked videos
+app.get("/api/users/videos/liked", checkJwt, async (req, res) => {
+  try {
+    const auth0_id = req.auth.payload.sub;
+
+    const videos = await db.all(
+      `SELECT v.* FROM videos v 
+       INNER JOIN video_likes vl ON v.id = vl.video_id 
+       WHERE vl.user_auth0_id = ? 
+       ORDER BY vl.created_at DESC`,
+      [auth0_id]
+    );
+
+    res.json(videos);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des vidéos likées:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Like a video
+app.post("/api/videos/:id/like", checkJwt, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const auth0_id = req.auth.payload.sub;
+
+    // Check if video exists
+    const video = await db.get("SELECT * FROM videos WHERE id = ?", [id]);
+    if (!video) {
+      return res.status(404).json({ error: "Vidéo non trouvée" });
+    }
+
+    // Try to insert the like
+    try {
+      await db.run(
+        "INSERT INTO video_likes (user_auth0_id, video_id) VALUES (?, ?)",
+        [auth0_id, id]
+      );
+      res.status(201).json({ ok: true });
+    } catch (error) {
+      // Already liked
+      if (error.message.includes("UNIQUE constraint failed")) {
+        return res.status(409).json({ error: "Vidéo déjà likée" });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error("Erreur lors du like:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Unlike a video
+app.delete("/api/videos/:id/like", checkJwt, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const auth0_id = req.auth.payload.sub;
+
+    const result = await db.run(
+      "DELETE FROM video_likes WHERE user_auth0_id = ? AND video_id = ?",
+      [auth0_id, id]
+    );
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Like non trouvé" });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Erreur lors du unlike:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Check if user has liked a video
+app.get("/api/videos/:id/is-liked", checkJwt, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const auth0_id = req.auth.payload.sub;
+
+    const like = await db.get(
+      "SELECT * FROM video_likes WHERE user_auth0_id = ? AND video_id = ?",
+      [auth0_id, id]
+    );
+
+    res.json({ isLiked: !!like });
+  } catch (error) {
+    console.error("Erreur lors de la vérification du like:", error);
+    res.status(500).json({ error: "Erreur serveur" });
   }
 });
 

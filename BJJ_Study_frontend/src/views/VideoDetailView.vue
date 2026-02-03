@@ -15,17 +15,15 @@
 
         <div class="video-info">
             <div class="video-header">
-                <div class="author">
-                    <img
-                    src="https://api.dicebear.com/7.x/thumbs/svg?seed=User"
-                    alt="avatar"
-                    class="avatar"
-                    />
-                    <div class="pseudo">Pseudo</div>
+                <div class="author-section">
+                  <VideoAuthor :author="author" />
                 </div>
-                <div class="likes">
-                    <span>1000 likes</span>
-                    <button class="like-button">♡</button>
+                <div class="likes-section">
+                    <LikeButton
+                      :likes-count="likesCount"
+                      :is-liked="isLiked"
+                      @toggle-like="toggleLike"
+                    />
                 </div>
             </div>
 
@@ -66,15 +64,35 @@
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useAuth0 } from '@auth0/auth0-vue';
 import VideoCard from "../components/VideoCard.vue";
+import VideoAuthor from "../components/VideoAuthor.vue";
+import LikeButton from "../components/LikeButton.vue";
 import Header from '../components/Header.vue';
 import { useSearch } from "../components/Search.vue";
+import { useVideoInfo } from "../composables/useVideoInfo";
 import { API_BASE_URL } from '@/config/api'
+
 const { selectedTags, selectedPosition, executeSearch, results } = useSearch();
-
-
 const route = useRoute();
+const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 const video = ref(null);
+
+// Use the composable for author and likes
+const currentVideoId = ref(null);
+const author = ref(null);
+const likesCount = ref(0);
+const isLiked = ref(false);
+let videoInfoComposable = null;
+
+const toggleLike = async () => {
+  if (videoInfoComposable) {
+    await videoInfoComposable.toggleLike();
+    // Update the local ref after toggling
+    isLiked.value = videoInfoComposable.isLiked.value;
+    likesCount.value = videoInfoComposable.likesCount.value;
+  }
+};
 
 async function loadVideo(id) {
     if (!id) return;
@@ -87,6 +105,19 @@ async function loadVideo(id) {
     }
 
     video.value = data;
+    currentVideoId.value = id;
+
+    // Initialize composable for this video
+    videoInfoComposable = useVideoInfo(id, { getAccessTokenSilently, isAuthenticated });
+    // Fetch and update local refs
+    await videoInfoComposable.fetchAuthor();
+    author.value = videoInfoComposable.author.value;
+
+    await videoInfoComposable.fetchLikesCount();
+    likesCount.value = videoInfoComposable.likesCount.value;
+
+    await videoInfoComposable.checkIfLiked();
+    isLiked.value = videoInfoComposable.isLiked.value;
 
     selectedTags.value = [];
     selectedPosition.value = null;
@@ -132,7 +163,7 @@ watch(() => route.params.id, (newId, oldId) => {
 
 const embedUrl = computed(() => {
   if (!video.value || !video.value.youtube_url) return "";
-  
+
   const url = new URL(video.value.youtube_url);
   const videoId = url.searchParams.get("v");
   if (!videoId) return "";
@@ -162,7 +193,7 @@ const duration = computed(() => {
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
 
 .page {
-  background: 
+  background:
     radial-gradient(ellipse at top right, rgba(220, 38, 38, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at bottom left, rgba(0, 0, 0, 0.05) 0%, transparent 50%),
     linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
@@ -181,7 +212,7 @@ const duration = computed(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px),
     repeating-linear-gradient(90deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px);
   pointer-events: none;
@@ -218,7 +249,7 @@ const duration = computed(() => {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   font-size: 13px;
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(0,0,0,0.2),
     inset 0 1px 0 rgba(255,255,255,0.1);
   transition: all .25s ease;
@@ -226,7 +257,7 @@ const duration = computed(() => {
 
 .login:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(0,0,0,0.3),
     inset 0 1px 0 rgba(255,255,255,0.15);
   filter: brightness(1.05);
@@ -234,6 +265,39 @@ const duration = computed(() => {
 
 .login:active {
   transform: translateY(0);
+}
+
+.author-photo-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d4af37, #c49e2e);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1.5px solid #d4af37;
+}
+
+.author-section {
+  padding: 8px 16px;
+  background: rgba(248, 250, 252, 0.7);
+  backdrop-filter: blur(8px);
+  border-radius: 50px;
+  transition: all .25s ease;
+}
+
+.author-section:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.likes-section {
+  display: flex;
+  align-items: center;
 }
 
 .content {
@@ -251,7 +315,7 @@ const duration = computed(() => {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(0,0,0,0.1),
     inset 0 1px 0 rgba(255,255,255,0.9);
   overflow: hidden;
@@ -276,14 +340,14 @@ const duration = computed(() => {
   border: none;
   border-radius: 18px;
   margin: 1.5rem 1rem 1rem 1rem;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0,0,0,0.12),
     0 2px 8px rgba(0,0,0,0.08);
   transition: all .3s ease;
 }
 
 .video-player:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(0,0,0,0.15),
     0 4px 12px rgba(0,0,0,0.1);
   transform: translateY(-2px);
@@ -299,84 +363,6 @@ const duration = computed(() => {
   align-items: center;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid rgba(226, 232, 240, 0.5);
-}
-
-.video-main {
-  text-align: center;
-  margin: 1.5rem 0;
-}
-
-.author {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 8px 16px;
-  background: rgba(248, 250, 252, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 50px;
-  transition: all .25s ease;
-}
-
-.author:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border: 2px solid white;
-}
-
-.pseudo {
-  font-weight: 700;
-  color: #1e293b;
-  font-size: 15px;
-}
-
-.likes {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 8px 16px;
-  background: rgba(254, 242, 242, 0.6);
-  backdrop-filter: blur(8px);
-  border-radius: 50px;
-  font-weight: 600;
-  color: #991b1b;
-  font-size: 14px;
-}
-
-.like-button {
-  border: none;
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  font-size: 1.2rem;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 
-    0 4px 12px rgba(220, 38, 38, 0.4),
-    inset 0 1px 0 rgba(255,255,255,0.2);
-  transition: all .25s ease;
-}
-
-.like-button:hover {
-  transform: scale(1.15);
-  box-shadow: 
-    0 6px 20px rgba(220, 38, 38, 0.5),
-    inset 0 1px 0 rgba(255,255,255,0.25);
-}
-
-.like-button:active {
-  transform: scale(1.05);
 }
 
 .title {
@@ -405,7 +391,7 @@ const duration = computed(() => {
   font-size: 14px;
   font-weight: 700;
   color: #334155;
-  box-shadow: 
+  box-shadow:
     0 2px 12px rgba(0,0,0,0.06),
     inset 0 1px 0 rgba(255,255,255,0.7);
   border: 1px solid rgba(255,255,255,0.5);
@@ -414,7 +400,7 @@ const duration = computed(() => {
 
 .tag:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0,0,0,0.1),
     inset 0 1px 0 rgba(255,255,255,0.9);
 }
@@ -422,7 +408,7 @@ const duration = computed(() => {
 .tag-yellow {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
   color: #78350f;
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(251, 191, 36, 0.3),
     inset 0 1px 0 rgba(255,255,255,0.4),
     inset 0 -2px 0 rgba(0,0,0,0.1);
@@ -430,7 +416,7 @@ const duration = computed(() => {
 }
 
 .tag-yellow:hover {
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(251, 191, 36, 0.5),
     inset 0 1px 0 rgba(255,255,255,0.6);
 }
@@ -489,7 +475,7 @@ const duration = computed(() => {
   backdrop-filter: blur(16px);
   border-radius: 20px;
   border-left: 6px solid #dc2626;
-  box-shadow: 
+  box-shadow:
     0 4px 20px rgba(0,0,0,0.06),
     inset 0 1px 0 rgba(255,255,255,0.9);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -505,7 +491,7 @@ const duration = computed(() => {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
   border-radius: 20px;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0,0,0,0.08),
     inset 0 1px 0 rgba(255,255,255,1);
   border: 1px solid rgba(255,255,255,0.18);

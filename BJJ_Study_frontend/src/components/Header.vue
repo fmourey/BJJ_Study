@@ -5,7 +5,7 @@
           <button class="btn login" v-if="!isAuthenticated" @click="loginWithRedirect()">
             Login
           </button>
-          <button class="btn logout" v-else @click="logout({ logoutParams: { returnTo: window.location.origin } })">
+          <button class="btn logout" v-else @click="handleLogout">
             Logout
           </button>
         </div>
@@ -18,6 +18,14 @@
 import { useAuth0 } from "@auth0/auth0-vue";
 const { loginWithRedirect, logout, isAuthenticated } = useAuth0();
 const signupHint = { authorizationParams: { screen_hint: "signup" } };
+
+const handleLogout = () => {
+  logout({
+    logoutParams: {
+      returnTo: window.location.origin
+    }
+  });
+};
 </script>
 
 <style scoped>
