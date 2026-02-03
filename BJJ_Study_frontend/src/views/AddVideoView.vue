@@ -1,11 +1,11 @@
 <template>
-  <!-- ... navbar identique ... -->
+  <Header />
 
   <main class="main-content">
     <div class="container">
       <h1 class="page-title">Ajouter une vidéo</h1>
       <form @submit.prevent="handleSubmit" class="video-form">
-        
+
         <!-- Tabs -->
         <div class="tab-container">
           <button type="button" class="tab-btn" :class="{ active: activeTab === 'youtube' }" @click="switchTab('youtube')">Youtube</button>
@@ -15,7 +15,7 @@
         <!-- Video Preview -->
         <div class="video-preview">
           <div class="preview-placeholder">
-            
+
             <!-- YouTube Thumbnail -->
             <div v-if="activeTab === 'youtube' && youtubeVideoId && !showYoutubePlayer" class="thumbnail-wrapper" @click="playYoutube">
               <img :src="`https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`" alt="Miniature" class="video-thumbnail"/>
@@ -40,7 +40,7 @@
 
             <!-- YouTube Error -->
             <div v-if="activeTab === 'youtube' && youtubeUrl && !youtubeVideoId" class="error-message">
-              <p>❌ URL YouTube invalide</p>
+              <p> URL YouTube invalide</p>
             </div>
 
             <!-- Local Thumbnail -->
@@ -55,11 +55,11 @@
             </div>
 
             <!-- Local Player -->
-            <video v-if="activeTab === 'local' && showLocalPlayer && videoFile" 
+            <video v-if="activeTab === 'local' && showLocalPlayer && videoFile"
               ref="localVideoPlayer"
-              class="video-iframe" 
-              width="100%" 
-              height="100%" 
+              class="video-iframe"
+              width="100%"
+              height="100%"
               controls
               :src="localVideoUrl"
               @loadedmetadata="seekLocalVideo">
@@ -148,7 +148,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { API_BASE_URL } from '@/config/api'
+import Header from '@/components/Header.vue'
+import { useAuth0 } from '@auth0/auth0-vue'
 
+const { getAccessTokenSilently, loginWithRedirect } = useAuth0()
 const activeTab = ref('youtube')
 const youtubeUrl = ref('')
 const videoFile = ref(null)
@@ -304,11 +307,11 @@ function timeToSeconds(time) {
     alert('Veuillez entrer un titre')
     return
   }
-  
+
   const videoId = youtubeVideoId.value
   const startSeconds = timeToSeconds(startTime.value)
   const endSeconds = timeToSeconds(endTime.value)
-  
+
   const data = {
     source: activeTab.value,
     youtubeUrl: youtubeUrl.value,
@@ -326,10 +329,10 @@ function timeToSeconds(time) {
     thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : localThumbnail.value,
     uploadDate: new Date().toISOString()
   }
-  
+
   console.log('Form data:', data)
   alert('Vidéo soumise avec succès !')
-  
+
   // Reset
   youtubeUrl.value = ''
   videoFile.value = null
@@ -348,7 +351,7 @@ function timeToSeconds(time) {
 
 */
 async function handleSubmit() {
-  // Validation
+  // Validation frontend
   if (activeTab.value === 'youtube' && !youtubeUrl.value) {
     alert('Veuillez entrer une URL YouTube')
     return
@@ -361,8 +364,7 @@ async function handleSubmit() {
     alert('Veuillez entrer un titre')
     return
   }
-  
-  // Préparer les données selon la source
+
   const videoData = {
     title: title.value,
     youtube_url: activeTab.value === 'youtube' ? youtubeUrl.value : '',
@@ -373,43 +375,75 @@ async function handleSubmit() {
     end_time: endTime.value || '0:00',
     description: description.value
   }
-  
+
+  let token
+  try {
+    token = await getAccessTokenSilently()
+  } catch (e) {
+    // Auth0 non prêt / session invalide
+    alert(`Erreur : ${e.message}`)
+    const confirmLogin = window.confirm(
+      'Vous devez être connecté pour publier une vidéo.\n\nSouhaitez-vous vous connecter maintenant ?'
+    )
+    if (confirmLogin) {
+      await loginWithRedirect({ appState: { targetUrl: '/addvideo' } })
+    }
+    return
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/api/videos`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(videoData != null ? videoData : {})
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(videoData)
     })
-    const result = await response.json()
-    
-    if (response.ok) {
-      alert('Vidéo ajoutée avec succès !')
-      console.log('Vidéo créée:', result.video)
-      
-      // Reset...
-      youtubeUrl.value = ''
-      videoFile.value = null
-      localThumbnail.value = null
-      localVideoUrl.value = null
-      title.value = ''
-      position.value = ''
-      tags.value = ''
-      startTime.value = ''
-      endTime.value = ''
-      difficulty.value = ''
-      description.value = ''
-      showYoutubePlayer.value = false
-      showLocalPlayer.value = false
-      activeTab.value = 'youtube'
-    } else {
-      alert(`Erreur : ${result.error}`)
+
+    if (response.status === 401 || response.status === 403) {
+      const confirmLogin = window.confirm(
+        'Connexion requise\n\nVous devez être connecté pour publier une vidéo.\n\nSouhaitez-vous vous connecter maintenant ?'
+      )
+
+      if (confirmLogin) {
+        await loginWithRedirect({
+          appState: { targetUrl: '/addvideo' }
+        })
+      }
+      return
     }
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      alert(result.error || 'Erreur lors de la publication')
+      return
+    }
+
+    alert('Vidéo ajoutée avec succès !')
+
+    // Reset formulaire
+    youtubeUrl.value = ''
+    videoFile.value = null
+    localThumbnail.value = null
+    localVideoUrl.value = null
+    title.value = ''
+    position.value = ''
+    tags.value = ''
+    startTime.value = ''
+    endTime.value = ''
+    difficulty.value = ''
+    description.value = ''
+    showYoutubePlayer.value = false
+    showLocalPlayer.value = false
+    activeTab.value = 'youtube'
+
   } catch (error) {
-    console.error('Erreur lors de l\'envoi:', error)
+    console.error('Erreur réseau:', error)
     alert('Erreur de connexion au serveur')
   }
 }
-
 
 </script>
 
@@ -424,7 +458,7 @@ async function handleSubmit() {
 
 body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: 
+  background:
     radial-gradient(ellipse at top right, rgba(220, 38, 38, 0.08) 0%, transparent 50%),
     radial-gradient(ellipse at bottom left, rgba(0, 0, 0, 0.05) 0%, transparent 50%),
     linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
@@ -443,7 +477,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: 
+  background-image:
     repeating-linear-gradient(0deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px),
     repeating-linear-gradient(90deg, transparent, transparent 35px, rgba(0,0,0,0.015) 35px, rgba(0,0,0,0.015) 36px);
   pointer-events: none;
@@ -457,7 +491,7 @@ body::before {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   padding: 1.2rem 2rem;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0,0,0,0.06),
     inset 0 1px 0 rgba(255,255,255,0.9);
   border-bottom: 1px solid rgba(255,255,255,0.18);
@@ -535,7 +569,7 @@ body::before {
   border-radius: 50%;
   border: 3px solid #dc2626;
   object-fit: cover;
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(220, 38, 38, 0.3),
     0 0 20px rgba(220, 38, 38, 0.2);
   transition: all 0.25s ease;
@@ -544,7 +578,7 @@ body::before {
 
 .profile-img:hover {
   transform: scale(1.1);
-  box-shadow: 
+  box-shadow:
     0 6px 20px rgba(220, 38, 38, 0.5),
     0 0 30px rgba(220, 38, 38, 0.3);
 }
@@ -593,7 +627,7 @@ body::before {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   padding: 2.5rem;
   border-radius: 24px;
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(0,0,0,0.1),
     inset 0 1px 0 rgba(255,255,255,0.9);
   border: 1px solid rgba(255,255,255,0.18);
@@ -645,7 +679,7 @@ body::before {
 .tab-btn.active {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(220, 38, 38, 0.4),
     inset 0 1px 0 rgba(255,255,255,0.2);
 }
@@ -666,7 +700,7 @@ body::before {
   align-items: center;
   justify-content: center;
   border: 3px solid rgba(251, 191, 36, 0.4);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0,0,0,0.12),
     0 0 40px rgba(251, 191, 36, 0.15),
     inset 0 0 40px rgba(251, 191, 36, 0.05);
@@ -812,7 +846,7 @@ body::before {
   backdrop-filter: blur(8px);
   color: #0f172a;
   transition: all 0.25s ease;
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(0,0,0,0.04),
     inset 0 1px 0 rgba(255,255,255,0.8);
 }
@@ -829,7 +863,7 @@ body::before {
   outline: none;
   border-color: #dc2626;
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 
+  box-shadow:
     0 0 0 4px rgba(220, 38, 38, 0.1),
     0 0 20px rgba(220, 38, 38, 0.15),
     inset 0 2px 4px rgba(0,0,0,0.02);
@@ -882,7 +916,7 @@ body::before {
   transition: all 0.25s ease;
   margin-top: 1.5rem;
   font-family: 'Outfit', sans-serif;
-  box-shadow: 
+  box-shadow:
     0 6px 25px rgba(220, 38, 38, 0.4),
     inset 0 1px 0 rgba(255,255,255,0.2);
   position: relative;
@@ -892,7 +926,7 @@ body::before {
 
 .submit-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 
+  box-shadow:
     0 8px 35px rgba(220, 38, 38, 0.5),
     inset 0 1px 0 rgba(255,255,255,0.25);
   filter: brightness(1.05);
@@ -907,27 +941,27 @@ body::before {
   .nav-menu {
     gap: 1.2rem;
   }
-  
+
   .nav-link {
     font-size: 0.85rem;
     letter-spacing: 0.8px;
   }
-  
+
   .page-title {
     font-size: 2.2rem;
     letter-spacing: 2px;
   }
-  
+
   .video-form {
     padding: 1.8rem;
   }
-  
+
   .tab-btn {
     padding: 0.9rem 1rem;
     font-size: 0.9rem;
     letter-spacing: 1px;
   }
-  
+
   .form-input,
   .form-select,
   .form-textarea {
