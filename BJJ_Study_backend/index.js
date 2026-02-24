@@ -368,7 +368,6 @@ app.put("/api/users/profile", checkJwt, async (req, res) => {
   }
 });
 
-// Get user's published videos
 app.get("/api/users/videos/published", checkJwt, async (req, res) => {
   try {
     const auth0_id = req.auth.payload.sub;
@@ -385,7 +384,6 @@ app.get("/api/users/videos/published", checkJwt, async (req, res) => {
   }
 });
 
-// Get user's liked videos
 app.get("/api/users/videos/liked", checkJwt, async (req, res) => {
   try {
     const auth0_id = req.auth.payload.sub;
@@ -405,19 +403,16 @@ app.get("/api/users/videos/liked", checkJwt, async (req, res) => {
   }
 });
 
-// Like a video
 app.post("/api/videos/:id/like", checkJwt, async (req, res) => {
   try {
     const { id } = req.params;
     const auth0_id = req.auth.payload.sub;
 
-    // Check if video exists
     const video = await db.get("SELECT * FROM videos WHERE id = ?", [id]);
     if (!video) {
       return res.status(404).json({ error: "Vidéo non trouvée" });
     }
 
-    // Try to insert the like
     try {
       await db.run(
         "INSERT INTO video_likes (user_auth0_id, video_id) VALUES (?, ?)",
@@ -425,7 +420,6 @@ app.post("/api/videos/:id/like", checkJwt, async (req, res) => {
       );
       res.status(201).json({ ok: true });
     } catch (error) {
-      // Already liked
       if (error.message.includes("UNIQUE constraint failed")) {
         return res.status(409).json({ error: "Vidéo déjà likée" });
       }
@@ -437,7 +431,6 @@ app.post("/api/videos/:id/like", checkJwt, async (req, res) => {
   }
 });
 
-// Unlike a video
 app.delete("/api/videos/:id/like", checkJwt, async (req, res) => {
   try {
     const { id } = req.params;
@@ -459,7 +452,6 @@ app.delete("/api/videos/:id/like", checkJwt, async (req, res) => {
   }
 });
 
-// Check if user has liked a video
 app.get("/api/videos/:id/is-liked", checkJwt, async (req, res) => {
   try {
     const { id } = req.params;
