@@ -1,6 +1,12 @@
 import { ref } from 'vue'
 import { API_BASE_URL } from '../config/api'
 
+export const getInitials = (name, surname) => {
+  const first = (name || '').charAt(0).toUpperCase()
+  const last = (surname || '').charAt(0).toUpperCase()
+  return first + last
+}
+
 export function useVideoInfo(videoId, { getAccessTokenSilently, isAuthenticated }) {
   const author = ref(null)
   const likesCount = ref(0)

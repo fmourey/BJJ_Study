@@ -1,19 +1,29 @@
 <template>
   <div class="video-author">
-    <img
-      v-if="author?.profile_photo"
-      :src="author.profile_photo"
-      :alt="author.pseudo"
-      class="author-photo"
-    />
-    <div v-else class="author-photo-placeholder">
-      {{ getInitials(author?.name, author?.surname) }}
+    <div
+      class="avatar"
+      :class="beltClass"
+    >
+      <img
+        v-if="author?.profile_photo"
+        :src="author.profile_photo"
+        :alt="author.pseudo"
+      />
+      <span v-else>
+        {{ getInitials(author?.name, author?.surname) }}
+      </span>
     </div>
-    <div class="pseudo">{{ author?.pseudo || author?.name || 'Anonyme' }}</div>
+
+    <div class="pseudo">
+      {{ author?.pseudo || author?.name || 'Anonyme' }}
+    </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue"
+import { getInitials } from "../composables/useVideoInfo"
+
 const props = defineProps({
   author: {
     type: Object,
@@ -21,46 +31,71 @@ const props = defineProps({
   }
 })
 
-const getInitials = (name, surname) => {
-  const first = (name || '').charAt(0).toUpperCase()
-  const last = (surname || '').charAt(0).toUpperCase()
-  return first + last
-}
+const beltClass = computed(() => {
+  const belt = props.author?.bjj_belt
+  if (!belt) return "belt-default"
+  return `belt-${belt}`
+})
 </script>
 
 <style scoped>
+
 .video-author {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
 }
 
-.author-photo {
-  width: 32px;
-  height: 32px;
+/* Avatar */
+.avatar {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 1.5px solid #d4af37;
-}
-
-.author-photo-placeholder {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #d4af37, #c49e2e);
-  color: white;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
   font-weight: 700;
-  border: 1.5px solid #d4af37;
+  font-size: 12px;
+  overflow: hidden;
+  transition: border-color .2s ease;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .pseudo {
-  font-size: 0.75rem;
-  color: #666;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
 }
+
+.belt-blanche {
+  border-color: #e5e7eb;
+}
+
+.belt-bleu {
+  border-color: #2563eb;
+}
+
+.belt-pourpre {
+  border-color: #7c3aed;
+}
+
+.belt-marron {
+  border-color: #92400e;
+}
+
+.belt-noire {
+  border-color: #111827;
+}
+
+.belt-default {
+  border-color: var(--line);
+}
+
 </style>

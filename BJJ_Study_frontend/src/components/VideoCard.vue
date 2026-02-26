@@ -113,6 +113,8 @@ watch(() => video.value?.id, (newId) => {
   overflow: hidden;
   background: #fff;
   border: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
 }
 
 .video-image img {
@@ -156,9 +158,10 @@ watch(() => video.value?.id, (newId) => {
   display: block;
 }
 
-.video-card-link:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.18);
-  border-radius: 12px;
+.video-card-link:hover .video-mini-card {
+  transform: translateY(-6px);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.12),
+    0 4px 10px rgba(0, 0, 0, 0.06);
 }
 </style>
