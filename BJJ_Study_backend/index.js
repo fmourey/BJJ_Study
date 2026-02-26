@@ -82,7 +82,54 @@ export async function initDB(filename = "./videos.db") {
             REFERENCES videos(id)
             ON DELETE CASCADE
     );
-    `);
+
+    CREATE TABLE IF NOT EXISTS positions (
+        id INTEGER PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  
+  const defaultPositions = [
+    "delariva",
+    "reverse delariva",
+    "kguard",
+    "kneeshield",
+    "octopus guard",
+    "coyotte guard",
+    "deephalfguard",
+    "dogfight",
+    "zguard",
+    "lasso guard",
+    "spider guard",
+    "false reap",
+    "top mount",
+    "side control",
+    "back control",
+    "closed guard",
+    "3/4 mount",
+    "50/50",
+    "butterfly ashigarami",
+    "saddle",
+    "single leg x",
+    "xguard",
+    "outside ashigarami",
+    "inside ashigarami",
+    "armbar",
+    "triangle",
+    "calfslicer",
+    "reverse closed guard",
+    "headquarters",
+    "kneecut"
+    ];
+
+    for (const pos of defaultPositions) {
+      await db.run(
+        `INSERT OR IGNORE INTO positions (name) VALUES (?)`,
+        [pos.toLowerCase()]
+      );
+    }
 
   return db;
 }
@@ -182,8 +229,8 @@ app.get("/api/search", async (req, res) => {
         }
 
         if (position) {
-            conditions.push("position = ?");
-            params.push(position);
+            conditions.push("LOWER(position) = LOWER(?)");
+            params.push(position.trim());
         }
 
         if (maxVideoLength) {
@@ -249,10 +296,10 @@ app.post("/api/videos", checkJwt, async (req, res) => {
 
 app.post("/api/users/profile", checkJwt, async (req, res) => {
   try {
-    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city } = req.body;
+    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city, email: bodyEmail } = req.body;
 
     const auth0_id = req.auth.payload.sub;
-    const email = req.auth.payload.email;
+    const email = bodyEmail || req.auth.payload.email;
 
     console.log("POST /api/users/profile called with auth0_id:", auth0_id);
 
@@ -326,9 +373,9 @@ app.get("/api/users/profile", checkJwt, async (req, res) => {
 
 app.put("/api/users/profile", checkJwt, async (req, res) => {
   try {
-    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city } = req.body
+    const { name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city, email: bodyEmail } = req.body
     const auth0_id = req.auth.payload.sub
-    const email = req.auth.payload.email
+    const email = bodyEmail || req.auth.payload.email
 
     if (!name) {
       return res.status(400).json({ error: "Le prénom est requis" })
@@ -465,6 +512,34 @@ app.get("/api/videos/:id/is-liked", checkJwt, async (req, res) => {
     res.json({ isLiked: !!like });
   } catch (error) {
     console.error("Erreur lors de la vérification du like:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.get("/api/positions", async (req, res) => {
+  const positions = await db.all(
+    "SELECT name FROM positions ORDER BY name ASC"
+  );
+  res.json(positions);
+});
+
+app.post("/api/positions", checkJwt, async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Nom requis" });
+    }
+
+    const normalized = name.trim().toLowerCase();
+
+    await db.run(
+      "INSERT OR IGNORE INTO positions (name) VALUES (?)",
+      [normalized]
+    );
+
+    res.status(201).json({ name: normalized });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

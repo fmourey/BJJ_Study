@@ -55,7 +55,7 @@
           v-if="activeTab === 'youtube' && youtubeUrl && !youtubeVideoId"
           class="state state-error"
         >
-          URL YouTube invalide
+          Invalid YouTube URL
         </div>
 
         <button
@@ -85,12 +85,12 @@
           "
           class="state"
         >
-          Aperçu vidéo
+          Video preview
         </div>
       </div>
 
       <div class="field block" v-if="activeTab === 'youtube'">
-        <label for="youtubeUrl">URL YouTube <span class="req">*</span></label>
+        <label for="youtubeUrl">YouTube URL<span class="req">*</span></label>
         <input
           id="youtubeUrl"
           type="url"
@@ -101,7 +101,7 @@
       </div>
 
       <div class="field block" v-if="activeTab === 'local'">
-        <label for="videoFile">Fichier vidéo <span class="req">*</span></label>
+        <label for="videoFile">Local video file<span class="req">*</span></label>
         <input
           id="videoFile"
           type="file"
@@ -113,50 +113,65 @@
 
       <div class="form-grid block">
         <div class="field">
-          <label for="title">Titre</label>
-          <input id="title" type="text" v-model="title" class="input" />
+          <label for="title">Title</label>
+          <input id="title" type="text" v-model="title" class="input" placeholder="The best bjj fight" />
         </div>
 
         <div class="field">
-          <label for="position">Position</label>
-          <select id="position" v-model="position" class="input">
-            <option value="">Sélectionner position</option>
-            <option value="garde-fermee">Garde fermée</option>
-            <option value="garde-ouverte">Garde ouverte</option>
-            <option value="half-guard">Half guard</option>
-            <option value="side-control">Side control</option>
-            <option value="mount">Mount</option>
-            <option value="back-control">Back control</option>
-            <option value="turtle">Turtle</option>
-            <option value="standing">Standing</option>
-          </select>
+          <PositionAutocomplete v-model="position">
+            <template #no-results="{ search, select }">
+              <div
+                v-if="search"
+                class="position-item add-new"
+                @click="createPosition(search, select)"
+              >
+                Add "{{ search }}"
+              </div>
+            </template>
+          </PositionAutocomplete>
         </div>
 
         <div class="field">
           <label for="tags">Tags</label>
           <input id="tags" type="text" v-model="tags" class="input" placeholder="sweep, entry, escape" />
-          <small class="hint">Séparez les tags par des virgules</small>
+          <small class="hint">Separate tags with commas</small>
         </div>
 
         <div class="field">
-          <label for="startTime">Heure de début</label>
-          <input id="startTime" type="text" v-model="startTime" class="input" placeholder="1:30 ou 90s" />
+          <label for="startTime">Start time</label>
+          <input id="startTime" type="text" v-model="startTime" class="input" placeholder="1:30 or 90s" />
         </div>
 
         <div class="field">
-          <label for="endTime">Heure de fin</label>
+          <label for="endTime">End time</label>
           <input id="endTime" type="text" v-model="endTime" class="input" placeholder="2:00 ou 120s" />
         </div>
 
         <div class="field">
-          <label for="difficulty">Difficulté</label>
-          <select id="difficulty" v-model="difficulty" class="input">
-            <option value="">Sélectionner difficulté</option>
-            <option value="debutant">Débutant</option>
-            <option value="intermediaire">Intermédiaire</option>
-            <option value="avance">Avancé</option>
-            <option value="expert">Expert</option>
-          </select>
+          <label>Difficulty</label>
+
+          <div class="position-autocomplete">
+            <div
+              class="input"
+              @click="isDifficultyOpen = !isDifficultyOpen"
+              style="cursor:pointer;"
+            >
+              <span :class="{ 'placeholder-text': !difficulty }">
+                {{ difficulty || 'Select a difficulty' }}
+              </span>
+            </div>
+
+            <div v-if="isDifficultyOpen" class="position-dropdown">
+              <div
+                v-for="level in difficultyOptions"
+                :key="level"
+                class="position-item"
+                @click="selectDifficulty(level)"
+              >
+                {{ level }}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="field full">
@@ -166,7 +181,7 @@
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn">
-        Soumettre
+        Submit
       </button>
     </form>
   </main>
@@ -176,10 +191,12 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { API_BASE_URL } from '@/config/api'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { useAuth0 } from '@auth0/auth0-vue'
+import PositionAutocomplete from '@/components/PositionAutocomplete.vue'
 
 const { getAccessTokenSilently, loginWithRedirect } = useAuth0()
 const activeTab = ref('youtube')
@@ -188,12 +205,15 @@ const videoFile = ref(null)
 const localThumbnail = ref(null)
 const localVideoUrl = ref(null)
 const title = ref('')
-const position = ref('')
+const position = ref(null)
 const tags = ref('')
 const startTime = ref('')
 const endTime = ref('')
 const difficulty = ref('')
+const isDifficultyOpen = ref(false)
+const difficultyOptions = ['Beginner', 'Intermediate', 'Advanced']
 const description = ref('')
+const router = useRouter()
 
 const showYoutubePlayer = ref(false)
 const showLocalPlayer = ref(false)
@@ -310,6 +330,33 @@ function extractYouTubeId(urlString) {
   } catch { return null }
 }
 
+async function createPosition(name, select) {
+  const newName = name.trim()
+  if (!newName) return
+
+  try {
+    const token = await getAccessTokenSilently()
+
+    const response = await fetch(`${API_BASE_URL}/api/positions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ name: newName })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to create')
+    }
+
+    select(newName)
+
+  } catch (err) {
+    console.error("Create position error:", err)
+  }
+}
+
 function timeToSeconds(time) {
   if (!time || time === "" || time === "0:00") return 0
   const parts = time.split(":").map(Number)
@@ -322,6 +369,11 @@ function timeToSeconds(time) {
   }
   if (/^\d+$/.test(time)) return Number(time)
   return 0
+}
+
+function selectDifficulty(level) {
+  difficulty.value = level
+  isDifficultyOpen.value = false
 }
 
 /*function handleSubmit() {
@@ -451,23 +503,7 @@ async function handleSubmit() {
       return
     }
 
-    alert('Vidéo ajoutée avec succès !')
-
-    // Reset formulaire
-    youtubeUrl.value = ''
-    videoFile.value = null
-    localThumbnail.value = null
-    localVideoUrl.value = null
-    title.value = ''
-    position.value = ''
-    tags.value = ''
-    startTime.value = ''
-    endTime.value = ''
-    difficulty.value = ''
-    description.value = ''
-    showYoutubePlayer.value = false
-    showLocalPlayer.value = false
-    activeTab.value = 'youtube'
+    router.push(`/video/${result.id}`)
 
   } catch (error) {
     console.error('Erreur réseau:', error)
@@ -565,6 +601,14 @@ textarea.input {
   min-height: 120px;
   resize: vertical;
   border-radius: var(--radius-md);
+}
+
+.add-new {
+  font-weight: 600;
+}
+
+.add-new:hover {
+  background: rgba(220,38,38,.08);
 }
 
 .submit-btn {

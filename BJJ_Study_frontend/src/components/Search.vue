@@ -1,26 +1,26 @@
 <script>
 import { ref } from 'vue';
-import { API_BASE_URL } from '@/config/api'
+import { API_BASE_URL } from '@/config/api';
+import { watch } from 'vue';
 
 export function useSearch() {
   const selectedTags = ref([]);
   const selectedPosition = ref(null);
-  const availablePositions = ref([
-    'Closed Guard',
-    'Guard Pass',
-    'Butterfly Guard'
-  ]);
-
   const maxVideoLength = ref(300);
   const loading = ref(false);
   const error = ref(null);
   const results = ref([]);
 
+  watch(selectedPosition, () => {
+    executeSearch()
+  });
+
   const buildSearchFilters = () => {
     return {
       tags: selectedTags.value.length > 0 ? selectedTags.value : undefined,
       position: selectedPosition.value || undefined,
-      maxVideoLength: maxVideoLength.value || undefined
+      maxVideoLength:
+        maxVideoLength.value < 300 ? maxVideoLength.value : undefined
     };
   };
 
@@ -30,23 +30,37 @@ export function useSearch() {
 
     try {
       const filters = buildSearchFilters();
-      const queryParams = new URLSearchParams();
-      if (filters.tags) {
-        filters.tags.forEach(tag => queryParams.append('tags', tag));
-      }
-      if (filters.position) {
-        queryParams.set('position', filters.position);
-      }
-      if (filters.maxVideoLength) {
-        queryParams.set('maxVideoLength', filters.maxVideoLength);
-      }
 
-      const response = await fetch(`${API_BASE_URL}/api/search?${queryParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
+      const noFilters =
+        !filters.tags &&
+        !filters.position &&
+        !filters.maxVideoLength;
+
+      let response;
+
+      if (noFilters) {
+        response = await fetch(`${API_BASE_URL}/api/videos`);
+      } else {
+        const queryParams = new URLSearchParams();
+
+        if (filters.tags) {
+          filters.tags.forEach(tag =>
+            queryParams.append('tags', tag)
+          );
         }
-      });
+
+        if (filters.position) {
+          queryParams.set('position', filters.position);
+        }
+
+        if (filters.maxVideoLength) {
+          queryParams.set('maxVideoLength', filters.maxVideoLength);
+        }
+
+        response = await fetch(
+          `${API_BASE_URL}/api/search?${queryParams}`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(`Search failed: ${response.statusText}`);
@@ -54,12 +68,11 @@ export function useSearch() {
 
       const data = await response.json();
       results.value = data;
-
       return data;
+
     } catch (err) {
       error.value = err.message;
       results.value = [];
-      // Don't re-throw - error is already handled and stored in error.value
     } finally {
       loading.value = false;
     }
@@ -79,12 +92,14 @@ export function useSearch() {
     }
   };
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     selectedTags.value = [];
     selectedPosition.value = null;
-    maxVideoLength.value = 300;
-    results.value = [];
+    maxVideoLength.value = 301;
+
     error.value = null;
+
+    await executeSearch();
   };
 
   const setPosition = (position) => {
@@ -94,7 +109,6 @@ export function useSearch() {
   return {
     selectedTags,
     selectedPosition,
-    availablePositions,
     maxVideoLength,
     loading,
     error,

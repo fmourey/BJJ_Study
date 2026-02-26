@@ -8,68 +8,72 @@ Here, users can review their fights, discover new techniques, take part in chall
 BJJ Study is much more than an analysis tool: it's a space for exchange and progression for all those who want to understand, learn and improve on the tatami.</p>
     </div>
 
+    <button class="btn btn-primary big-button" @click="navigateToAddVideo">Add video</button>
+
     <h2 class="section-title">Search for videos</h2>
-
-    <div class="searchbar block">
-      <input
-        v-model="tagInput"
-        class="input"
-        placeholder="Add a tag... (press Enter)"
-        @keyup.enter="handleAddTag"
-      />
-      <button class="btn btn-dark" @click="handleAddTag">Add Tag</button>
-      <button class="btn btn-primary" @click="navigateToAddVideo">Add Video</button>
-    </div>
-
-    <div v-if="selectedTags.length > 0" class="chips block">
-      <div class="chip" v-for="tag in selectedTags" :key="tag">
-        <span>{{ tag }}</span>
-        <button @click="removeTag(tag)" aria-label="Remove tag">&times;</button>
-      </div>
-    </div>
 
     <div class="panel block">
       <div class="filters">
-        <div class="field">
-          <div class="label">Position</div>
-          <div class="dropdown">
-            <button class="btn dropdown-toggle">
-              {{ selectedPosition || 'Select position...' }}
-            </button>
-            <div class="dropdown-menu">
-              <label v-for="position in availablePositions" :key="position" class="menu-item">
-                <input
-                  type="radio"
-                  :value="position"
-                  :checked="selectedPosition === position"
-                  @change="setPosition(position);executeSearch()"
-                />
-                {{ position }}
-              </label>
-
-              <label v-if="selectedPosition" class="menu-item">
-                <input type="radio" :value="null" @change="setPosition(null);executeSearch()" />
-                Clear selection
-              </label>
+        <PositionAutocomplete v-model="selectedPosition">
+          <template #selected="{ value, clear }">
+            <div v-if="value" class="chips">
+              <div class="chip chip-position">
+                <span>{{ value }}</span>
+                <button @click="clear" aria-label="Remove position">
+                  &times;
+                </button>
+              </div>
             </div>
+          </template>
+        </PositionAutocomplete>
+
+        <div class="field tag-field">
+          <div class="field-header">
+            <div class="label">Tags</div>
+          </div>
+
+            <input
+              v-model="tagInput"
+              class="input"
+              placeholder="Add a tag..."
+              @keydown.enter.prevent="handleAddTag"
+              @keydown.,.prevent="handleAddTag"
+              @keydown.backspace="handleBackspace"
+            />
+
+            <div v-if="selectedTags.length > 0" class="chips">
+              <div class="chip" v-for="tag in selectedTags" :key="tag">
+                <span>{{ tag }}</span>
+                <button @click="removeTag(tag)" aria-label="Remove tag">
+                  &times;
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        <div class="field">
+          <div class="label">
+            Max video length: {{ formatDuration(maxVideoLength) }}
+          </div>
+          <div class="slider-field">
+            <input
+              type="range"
+              class="range"
+              v-model.number="maxVideoLength"
+              min="1"
+              max="301"
+              step="15"
+              :style="{ background: sliderBackground }"
+              @input="executeSearch"
+            />
           </div>
         </div>
 
-        <div class="field">
-          <div class="label">Max video length: {{ formatDuration(maxVideoLength) }}</div>
-          <input
-            type="range"
-            class="range"
-            v-model.number="maxVideoLength"
-            min="1"
-            max="301"
-            step="15"
-            :style="{ background: sliderBackground }"
-            @input="executeSearch"
-          />
-        </div>
+        <button class="btn btn-dark btn-clear" @click="clearFilters">
+          Clear filters
+        </button>
 
-        <button class="btn btn-primary" @click="clearFilters">Clear Filters</button>
       </div>
     </div>
 
@@ -99,6 +103,7 @@ import { useSearch } from '../components/Search.vue';
 import Header from '../components/Header.vue';
 import Footer from '../components/Footer.vue';
 import VideoCard from '../components/VideoCard.vue';
+import PositionAutocomplete from '../components/PositionAutocomplete.vue';
 
 const router = useRouter();
 const tagInput = ref('');
@@ -106,7 +111,6 @@ const tagInput = ref('');
 const {
   selectedTags,
   selectedPosition,
-  availablePositions,
   maxVideoLength,
   loading,
   error,
@@ -115,7 +119,6 @@ const {
   clearFilters,
   addTag,
   removeTag,
-  setPosition
 } = useSearch();
 
 onMounted(() => {
@@ -123,12 +126,28 @@ onMounted(() => {
 });
 
 const handleAddTag = () => {
-  if (tagInput.value.trim()) {
-    addTag(tagInput.value);
-    tagInput.value = '';
-    executeSearch();
+  const rawValue = tagInput.value
+  if (!rawValue) return
+  const cleaned = rawValue.replace(/,/g, '').trim()
+  if (!cleaned) {
+    tagInput.value = ''
+    return
   }
-};
+  const normalizedTag = cleaned.toLowerCase()
+  if (!selectedTags.value.includes(normalizedTag)) {
+    addTag(normalizedTag)
+    executeSearch()
+  }
+  tagInput.value = ''
+}
+
+const handleBackspace = () => {
+  if (tagInput.value === '' && selectedTags.value.length > 0) {
+    selectedTags.value.pop()
+    executeSearch()
+  }
+}
+
 const navigateToAddVideo = () => {
   router.push('/addvideo');
 };
@@ -159,86 +178,20 @@ const formatDuration = (seconds) => {
   text-align: center;
 }
 
-/* Dropdown avec animation fluide */
-.dropdown {
-  position: relative;
-  width: 100%;
-}
-
-.dropdown-toggle {
-  background: rgba(248, 250, 252, 0.7);
-  backdrop-filter: blur(8px);
-  color: var(--text);
-  padding: 14px 22px;
-  border-radius: var(--radius-md);
-  border: 2px solid rgba(226, 232, 240, 0.6);
-  width: 100%;
-  text-align: left;
-  font-weight: 600;
-  transition: all .3s ease;
-  box-shadow:
-    0 2px 8px rgba(0,0,0,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.8);
-}
-
-.dropdown-toggle:hover {
-  border-color: var(--brand);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 4px 20px rgba(220, 38, 38, 0.15),
-    inset 0 1px 0 rgba(255,255,255,1);
-  transform: translateY(-2px);
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 2px solid rgba(226, 232, 240, 0.6);
-  border-radius: var(--radius-md);
-  box-shadow:
-    0 20px 60px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,1);
-  display: none;
-  z-index: 100;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: all .3s ease;
-}
-
-.dropdown:hover .dropdown-menu {
+.big-button {
   display: block;
-  opacity: 1;
-  transform: translateY(0);
+  margin: 0 auto;
 }
 
-.searchbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-sm);
+.slider-field {
+  margin-top: 15px;
 }
 
-.searchbar .input {
-  border: none;
-  background: transparent;
-  box-shadow: none;
-  padding: 12px 14px;
+.btn-clear {
+  margin-top: 25px;
+  margin-left: 20px;
 }
 
-.searchbar .input:focus {
-  border: none;
-  box-shadow: none;
-  background: transparent;
-}
 
 .chips {
   display: flex;
@@ -258,6 +211,22 @@ const formatDuration = (seconds) => {
   box-shadow: var(--shadow-sm);
   font-weight: 800;
   font-size: 13px;
+}
+
+.chip-position {
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--brand);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.chip-position button {
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.06);
+  color: var(--brand);
+}
+
+.chip-position button:hover {
+  background: rgba(220, 38, 38, 0.15);
 }
 
 .chip button {
@@ -284,7 +253,7 @@ const formatDuration = (seconds) => {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .field {
@@ -292,53 +261,6 @@ const formatDuration = (seconds) => {
   flex-direction: column;
   gap: 8px;
   min-width: 220px;
-  flex: 1;
-}
-
-.label {
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: rgba(15,23,42,.85);
-}
-
-.dropdown { position: relative; width: 100%; }
-.dropdown-toggle { width: 100%; text-align: left; }
-
-.dropdown-menu {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 0;
-  width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  padding: 8px;
-  z-index: 50;
-  display: none;
-}
-
-.dropdown:hover .dropdown-menu { display: block; }
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.menu-item:hover { background: rgba(15,23,42,.04); }
-
-.menu-item input[type="radio"] {
-  accent-color: var(--brand);
-  width: 18px;
-  height: 18px;
 }
 
 .range {
@@ -370,6 +292,12 @@ const formatDuration = (seconds) => {
   border: 3px solid var(--surface);
   box-shadow: 0 8px 18px rgba(220,38,38,.28);
   cursor: pointer;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
 </style>

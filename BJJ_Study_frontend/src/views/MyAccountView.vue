@@ -3,7 +3,7 @@
 
   <main class="container block">
 
-    <h1 class="block">Mon profil</h1>
+    <h1 class="block">My profile</h1>
 
     <div v-if="loading" class="state">Chargement...</div>
     <div v-if="error" class="state state-error">{{ error }}</div>
@@ -21,7 +21,10 @@
 
             <div class="hero-info">
               <h2>{{ user.pseudo || user.name }}</h2>
-              <p class="muted">{{ user.email }}</p>
+
+              <p v-if="age !== null" class="muted">
+                {{ age }} ans
+              </p>
             </div>
 
             <button class="btn btn-ghost" @click="startEdit">
@@ -52,23 +55,28 @@
             </div>
           </div>
 
-          <div v-if="user.description" class="hero-description">
-            <h3>Description</h3>
-            <p>{{ user.description }}</p>
-          </div>
-
         </div>
 
         <form v-else @submit.prevent="saveProfile" class="edit-grid">
 
           <div class="field">
-            <label>Prénom</label>
+            <label>Name</label>
             <input v-model="form.name" class="input" required />
           </div>
 
           <div class="field">
-            <label>Nom</label>
+            <label>Surname</label>
             <input v-model="form.surname" class="input" />
+          </div>
+
+          <div class="field">
+            <label>Email</label>
+            <input v-model="form.email" type="email" class="input" required />
+          </div>
+
+          <div class="field">
+            <label>Birthdate</label>
+            <input v-model="form.birthdate" type="date" class="input" />
           </div>
 
           <div class="field">
@@ -82,30 +90,25 @@
           </div>
 
           <div class="field">
-            <label>Ceinture</label>
+            <label>Belt</label>
             <select v-model="form.bjj_belt" class="input">
-              <option value="">Sélectionner</option>
-              <option value="blanche">Blanche</option>
-              <option value="bleu">Bleu</option>
-              <option value="pourpre">Violet</option>
-              <option value="marron">Marron</option>
-              <option value="noire">Noire</option>
+              <option value="">Select</option>
+              <option value="blanche">White</option>
+              <option value="bleu">Blue</option>
+              <option value="pourpre">Purple</option>
+              <option value="marron">Brown</option>
+              <option value="noire">Black</option>
             </select>
           </div>
 
           <div class="field">
-            <label>Ville</label>
+            <label>City</label>
             <input v-model="form.bjj_city" class="input" />
           </div>
 
           <div class="field full">
-            <label>Photo URL</label>
+            <label>Picture URL</label>
             <input v-model="form.profile_photo" class="input" />
-          </div>
-
-          <div class="field full">
-            <label>Description</label>
-            <textarea v-model="form.description" class="input"></textarea>
           </div>
 
           <div class="form-actions full">
@@ -142,7 +145,6 @@
           </button>
       </div>
 
-      <!-- GRID -->
       <div class="grid">
         <VideoCard
           v-for="video in currentVideos"
@@ -164,7 +166,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 import { useRouter } from "vue-router"
 import Header from "@/components/Header.vue"
@@ -198,6 +200,22 @@ const initials = computed(() => {
   ).toUpperCase()
 })
 
+const age = computed(() => {
+  if (!user.value?.birthdate) return null
+
+  const today = new Date()
+  const birth = new Date(user.value.birthdate)
+
+  let years = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    years--
+  }
+
+  return years
+})
+
 function startEdit() {
   form.value = { ...user.value }
   editing.value = true
@@ -215,7 +233,7 @@ async function fetchProfile() {
     })
     user.value = await res.json()
   } catch (e) {
-    error.value = "Erreur chargement profil"
+    error.value = e + " - Erreur chargement profil"
   } finally {
     loading.value = false
   }

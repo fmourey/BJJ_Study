@@ -7,6 +7,7 @@
       <div v-if="video" class="card video-card">
 
         <iframe
+          :key="playerKey"
           class="video-player"
           :src="embedUrl"
           frameborder="0"
@@ -14,15 +15,18 @@
         ></iframe>
 
         <div class="video-info">
-
           <div class="video-header">
             <VideoAuthor :author="author" />
-
-            <LikeButton
-              :likes-count="likesCount"
-              :is-liked="isLiked"
-              @toggle-like="toggleLike"
-            />
+            <div class="video-actions">
+              <button class="replay-btn" @click="replaySegment">
+                ↺
+              </button>
+              <LikeButton
+                :likes-count="likesCount"
+                :is-liked="isLiked"
+                @toggle-like="toggleLike"
+              />
+            </div>
           </div>
 
           <h1>{{ video.title }}</h1>
@@ -94,6 +98,7 @@ const video = ref(null);
 
 const currentVideoId = ref(null);
 const author = ref(null);
+const playerKey = ref(0)
 const likesCount = ref(0);
 const isLiked = ref(false);
 let videoInfoComposable = null;
@@ -183,6 +188,9 @@ const embedUrl = computed(() => {
   return `https://www.youtube.com/embed/${videoId}?start=${start}&end=${end}`;
 });
 
+function replaySegment() {
+  playerKey.value++
+}
 
 function timeToSeconds(time) {
   const [m, s] = time.split(":").map(Number);
@@ -211,9 +219,31 @@ const duration = computed(() => {
   border-bottom: 1px solid var(--line);
 }
 
-
 .video-info {
   padding: 24px;
+}
+
+.video-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.replay-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.replay-btn:hover {
+  background: rgba(220,38,38,.1);
+  border-color: rgba(220,38,38,.3);
+  color: var(--brand);
 }
 
 .video-header {
