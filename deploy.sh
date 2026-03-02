@@ -20,17 +20,38 @@ cd "$RELEASE_DIR/BJJ_Study_backend"
 rm -rf node_modules
 sed -i 's/^const PORT = .*/const PORT = 1025;/' index.js
 cd ../BJJ_Study_frontend/src/config
-sed -i "s|^export const API_BASE_URL = .*|export const API_BASE_URL = 'http://laurier.aioli.ec-m.fr'|" api.js
+sed -i "s|^export const API_BASE_URL = .*|export const API_BASE_URL = 'https://laurier.aioli.ec-m.fr'|" api.js
 cd ../..
 
 npm i
 npm run build
 cd ../..
 
-ssh -A natlan@sas1.ec-m.fr "ssh laurier@aioli.ec-m.fr 'rm -rf static; rm -rf BJJ_Study_backend'"
+ssh -A natlan@sas1.ec-m.fr "ssh laurier@aioli.ec-m.fr '
 
-scp -r -o ProxyJump=natlan@sas1.ec-m.fr BJJ_Study/BJJ_Study_backend/* laurier@aioli.ec-m.fr:BJJ_Study_backend
-scp -r -o ProxyJump=natlan@sas1.ec-m.fr BJJ_Study/BJJ_Study_frontend/dist/* laurier@aioli.ec-m.fr:static
+  echo \"Sauvegarde temporaire de la base...\"
+
+  if [ -f BJJ_Study_backend/videos.db ]; then
+    cp BJJ_Study_backend/videos.db videos_backup.db
+  fi
+
+  rm -rf static
+  rm -rf BJJ_Study_backend
+
+'"
+
+scp -r -o ProxyJump=natlan@sas1.ec-m.fr "$RELEASE_DIR"/BJJ_Study_backend/. laurier@aioli.ec-m.fr:BJJ_Study_backend
+scp -r -o ProxyJump=natlan@sas1.ec-m.fr "$RELEASE_DIR"/BJJ_Study_frontend/dist/* laurier@aioli.ec-m.fr:static
+
+ssh -A natlan@sas1.ec-m.fr "ssh laurier@aioli.ec-m.fr '
+
+  echo \"Restauration de la base...\"
+
+  if [ -f videos_backup.db ]; then
+    mv videos_backup.db BJJ_Study_backend/videos.db
+  fi
+
+'"
 
 ssh -A natlan@sas1.ec-m.fr "ssh laurier@aioli.ec-m.fr '
   cd BJJ_Study_backend/
