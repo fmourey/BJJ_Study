@@ -16,7 +16,10 @@
 
         <div class="video-info">
           <div class="video-header">
-            <VideoAuthor :author="author" />
+            <div class="video-main">
+              <VideoAuthor :author="author" />
+              <h1 class="video-title">{{ video.title }}</h1>
+            </div>
             <div class="video-actions">
               <button class="replay-btn" @click="replaySegment">
                 ↺
@@ -28,8 +31,6 @@
               />
             </div>
           </div>
-
-          <h1>{{ video.title }}</h1>
 
           <div class="tags block">
             <span class="tag tag-position">{{ video.position }}</span>
@@ -47,9 +48,9 @@
           </p>
 
           <div class="meta">
-            <span>Durée : {{ duration }}</span>
+            <span>Duration : {{ duration }}</span>
             <span>
-              Ajoutée le {{ new Date(video.created_at).toLocaleDateString() }}
+              Added : {{ new Date(video.created_at).toLocaleDateString() }}
             </span>
           </div>
 
@@ -57,12 +58,14 @@
       </div>
 
       <div v-else class="state">
-        Chargement...
+        Loading...
       </div>
     </main>
 
+    <Comments v-if="video" :video-id="video.id" />
+
     <section class="block">
-      <h2>Vidéos similaires</h2>
+      <h2>Similar videos</h2>
 
       <div class="grid">
         <VideoCard
@@ -86,6 +89,7 @@ import VideoCard from "../components/VideoCard.vue";
 import VideoAuthor from "../components/VideoAuthor.vue";
 import LikeButton from "../components/LikeButton.vue";
 import Header from '../components/Header.vue';
+import Comments from "../components/Comments.vue";
 import { useSearch } from "../components/Search.vue";
 import { useVideoInfo } from "../composables/useVideoInfo";
 import { API_BASE_URL } from '@/config/api'
@@ -165,15 +169,18 @@ async function loadVideo(id) {
         .slice(0, 8);
 }
 
-onMounted(() => {
-    loadVideo(route.params.id);
+onMounted(async () => {
+  await loadVideo(route.params.id)
 });
 
-watch(() => route.params.id, (newId, oldId) => {
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
     if (newId && newId !== oldId) {
-        loadVideo(newId);
+      await loadVideo(newId)
     }
-});
+  }
+);
 
 const embedUrl = computed(() => {
   if (!video.value || !video.value.youtube_url) return "";
@@ -253,8 +260,16 @@ const duration = computed(() => {
   margin-bottom: 16px;
 }
 
-h1 {
-  margin-bottom: 16px;
+.video-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.video-title {
+  font-size: 30px;
+  font-weight: 800;
+  padding : 10px 30px;
 }
 
 .tags {
@@ -301,15 +316,20 @@ h1 {
     height: 260px;
   }
 
+  .meta {
+    flex-direction: column;
+  }
+
   .video-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
 
-  .meta {
-    flex-direction: column;
+  .video-main {
+    width: 100%;
   }
+
 }
 
 </style>

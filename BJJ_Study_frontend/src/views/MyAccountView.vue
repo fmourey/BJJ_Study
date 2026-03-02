@@ -168,14 +168,15 @@
 <script setup>
 import { ref, computed, onMounted } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
-import { useRouter } from "vue-router"
+import { useRouter, useRoute } from "vue-router"
 import Header from "@/components/Header.vue"
 import Footer from "@/components/Footer.vue"
 import VideoCard from "@/components/VideoCard.vue"
 import { API_BASE_URL } from "@/config/api"
 
-const { getAccessTokenSilently, isAuthenticated } = useAuth0()
+const { getAccessTokenSilently, isAuthenticated, user: currentUser } = useAuth0()
 const router = useRouter()
+const route = useRoute()
 
 const user = ref(null)
 const form = ref({})
@@ -187,6 +188,14 @@ const saving = ref(false)
 const publishedVideos = ref([])
 const likedVideos = ref([])
 const view = ref("published")
+
+// Determine if we're viewing the current user's profile
+const isOwnProfile = computed(() => {
+  if (!currentUser.value || !user.value) return false
+  return currentUser.value.sub === user.value.auth0_id
+})
+
+const canEdit = computed(() => isOwnProfile.value)
 
 const currentVideos = computed(() =>
   view.value === "published" ? publishedVideos.value : likedVideos.value
@@ -227,11 +236,20 @@ function cancelEdit() {
 
 async function fetchProfile() {
   try {
-    const token = await getAccessTokenSilently()
-    const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    user.value = await res.json()
+    const userId = route.params.userId
+
+    if (userId && userId !== currentUser.value?.sub) {
+      // Fetching another user's public profile
+      const res = await fetch(`${API_BASE_URL}/api/users/${userId}`)
+      user.value = await res.json()
+    } else {
+      // Fetching current user's profile
+      const token = await getAccessTokenSilently()
+      const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      user.value = await res.json()
+    }
   } catch (e) {
     error.value = e + " - Erreur chargement profil"
   } finally {

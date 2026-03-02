@@ -15,8 +15,12 @@
         </div>
 
         <div class="video-info">
-          <VideoAuthor :author="author" />
-          <h1 class="title">{{ video.title }}</h1>
+          <div class="info-row">
+            <VideoAuthor
+              :author="author"
+            />
+            <h1 class="title">{{ video.title }}</h1>
+          </div>
         </div>
 
         <div class="duration-meta">
@@ -125,14 +129,24 @@ watch(() => video.value?.id, (newId) => {
 }
 
 .video-info {
-  padding: 8px 6px;
+  padding: 8px 0px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
 }
 
 .title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin: 4px 0 0 0;
-  line-height: 1.2;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 15px 40px 0 0;
+  flex: 1;
 }
 
 .duration-meta {

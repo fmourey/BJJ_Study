@@ -6,7 +6,7 @@
         class="btn btn-dark"
         @click="$router.push('/')"
       >
-        Accueil
+        Home
       </button>
 
       <div class="auth-buttons">
@@ -23,7 +23,7 @@
           class="btn btn-primary"
           @click="loginWithRedirect(signupHint)"
         >
-          Inscription
+          Sign Up
         </button>
 
         <button
@@ -31,7 +31,7 @@
           class="btn btn-ghost"
           @click="$router.push('/myaccount')"
         >
-          Mon Profil
+          My Profile
         </button>
 
         <button

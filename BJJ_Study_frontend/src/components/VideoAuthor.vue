@@ -1,9 +1,9 @@
 <template>
   <div class="video-author">
-    <div
-      class="avatar"
-      :class="beltClass"
-    >
+      <div
+        class="avatar"
+        :style="beltColor ? { borderColor: beltColor } : undefined"
+      >
       <img
         v-if="author?.profile_photo"
         :src="author.profile_photo"
@@ -14,7 +14,7 @@
       </span>
     </div>
 
-    <div class="pseudo">
+    <div v-if="showName" class="pseudo">
       {{ author?.pseudo || author?.name || 'Anonyme' }}
     </div>
   </div>
@@ -28,25 +28,35 @@ const props = defineProps({
   author: {
     type: Object,
     default: null
+  },
+  showName: {
+    type: Boolean,
+    default: true
   }
 })
 
-const beltClass = computed(() => {
+const beltColor = computed(() => {
   const belt = props.author?.bjj_belt
-  if (!belt) return "belt-default"
-  return `belt-${belt}`
+  if (!belt) return null
+  return {
+    blanche: "#e5e7eb",
+    bleu: "#2563eb",
+    pourpre: "#7c3aed",
+    marron: "#92400e",
+    noire: "#111827"
+  }[belt] || null
 })
+console.log("belt =", props.author?.pseudo, props.author?.bjj_belt)
 </script>
 
 <style scoped>
 
 .video-author {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
 }
 
-/* Avatar */
 .avatar {
   width: 36px;
   height: 36px;
@@ -69,33 +79,10 @@ const beltClass = computed(() => {
 }
 
 .pseudo {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
-}
-
-.belt-blanche {
-  border-color: #e5e7eb;
-}
-
-.belt-bleu {
-  border-color: #2563eb;
-}
-
-.belt-pourpre {
-  border-color: #7c3aed;
-}
-
-.belt-marron {
-  border-color: #92400e;
-}
-
-.belt-noire {
-  border-color: #111827;
-}
-
-.belt-default {
-  border-color: var(--line);
+  color: var(--text);
+  text-align: center;
 }
 
 </style>

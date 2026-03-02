@@ -1,6 +1,5 @@
 <template>
   <div class="like-container">
-    <span class="likes-count">{{ likesCount }} likes</span>
     <button
       class="like-button"
       :class="{ liked: isLiked }"
@@ -9,6 +8,7 @@
     >
       {{ isLiked ? '❤️' : '🤍' }}
     </button>
+    <span class="likes-count">{{ likesCount }}</span>
   </div>
 </template>
 
@@ -36,7 +36,7 @@ const toggleLike = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 8px 16px;
+  padding: 8px 8px;
   background: rgba(254, 242, 242, 0.6);
   backdrop-filter: blur(8px);
   border-radius: 50px;

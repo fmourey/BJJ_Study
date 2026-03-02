@@ -5,27 +5,27 @@
       <div class="footer-col">
         <h3>BJJ Study</h3>
         <p>
-          Plateforme d'analyse et de progression dédiée aux pratiquants
-          de Brazilian Jiu-Jitsu de tous niveaux.
+          Plateform of analysis and progression dedicated to Brazilian Jiu-Jitsu practitioners
+          of all levels.
         </p>
       </div>
 
       <div class="footer-col">
         <h3>Navigation</h3>
         <ul class="footer-links">
-          <li><a href="/">Accueil</a></li>
-          <li><a href="/#/addvideo">Ajouter une vidéo</a></li>
-          <li><a href="/#/myaccount">Mon profil</a></li>
+          <li><a href="/">Home</a></li>
+          <li><a href="/#/addvideo">Add a video</a></li>
+          <li><a href="/#/myaccount">My profile</a></li>
         </ul>
       </div>
 
       <div class="footer-col">
-        <h3>Informations légales</h3>
+        <h3>Legal informations</h3>
         <ul class="footer-links">
-          <li><a href="#">Mentions légales</a></li>
-          <li><a href="#">Politique de confidentialité</a></li>
-          <li><a href="#">Conditions générales d'utilisation</a></li>
-          <li><a href="#">Gestion des cookies</a></li>
+          <li><a href="#">Legal notices</a></li>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">General terms of use</a></li>
+          <li><a href="#">Cookie management</a></li>
         </ul>
       </div>
 
@@ -40,7 +40,7 @@
     </div>
 
     <div class="footer-bottom">
-      © {{ new Date().getFullYear() }} BJJ Study — Tous droits réservés.
+      © {{ new Date().getFullYear() }} BJJ Study — All rights reserved.
     </div>
   </footer>
 </template>
