@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
 set -e
 
+VERSION=$(date +"%Y%m%d_%H%M%S")
+RELEASE_DIR="BJJ_Study_$VERSION"
+
 eval "$(ssh-agent -s)"
 trap 'ssh-agent -k >/dev/null 2>&1' EXIT
 
 ssh -A natlan@sas1.ec-m.fr 'ssh-add'
 ssh-add -l || true
 
-rm -rf BJJ_Study
-git clone https://github.com/fmourey/BJJ_Study.git
-cd BJJ_Study/BJJ_Study_backend
+rm -rf "$RELEASE_DIR"
+git clone https://github.com/fmourey/BJJ_Study.git "$RELEASE_DIR"
+
+cp ./BJJ_Study/BJJ_Study_backend/.env "$RELEASE_DIR/BJJ_Study_backend/.env"
+cp ./BJJ_Study/BJJ_Study_frontend/.env "$RELEASE_DIR/BJJ_Study_frontend/.env"
+
+cd "$RELEASE_DIR/BJJ_Study_backend"
 rm -rf node_modules
 sed -i 's/^const PORT = .*/const PORT = 1025;/' index.js
 cd ../BJJ_Study_frontend/src/config

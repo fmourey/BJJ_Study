@@ -27,6 +27,11 @@ const routes = [
     name: 'my-account',
     component: MyAccountView,
     beforeEnter: authGuard
+  },
+  {
+    path: "/users/:auth0_id",
+    name: "user-profile",
+    component: MyAccountView
   }
 ]
 

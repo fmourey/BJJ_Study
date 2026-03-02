@@ -173,7 +173,7 @@ button:active { transform: translateY(0); }
   font-weight: 900;
   letter-spacing: .08em;
   text-transform: uppercase;
-  color: rgba(15,23,42,.85);
+  color: var(--text);
 }
 
 .position-autocomplete {

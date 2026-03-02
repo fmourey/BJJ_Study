@@ -88,6 +88,21 @@ export async function initDB(filename = "./videos.db") {
         name TEXT UNIQUE NOT NULL,
         created_at TEXT DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY,
+        user_auth0_id TEXT NOT NULL,
+        video_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_auth0_id)
+            REFERENCES users(auth0_id)
+            ON DELETE CASCADE,
+        FOREIGN KEY (video_id)
+            REFERENCES videos(id)
+            ON DELETE CASCADE
+    );
   `);
 
   
@@ -173,7 +188,7 @@ app.get("/api/videos/:id/author", async (req, res) => {
     }
     
     const author = await db.get(
-      "SELECT id, name, surname, pseudo, profile_photo FROM users WHERE auth0_id = ?",
+      "SELECT id, name, surname, pseudo, profile_photo, bjj_belt FROM users WHERE auth0_id = ?",
       [video.owner_auth0_id]
     );
     
@@ -512,6 +527,92 @@ app.get("/api/videos/:id/is-liked", checkJwt, async (req, res) => {
     res.json({ isLiked: !!like });
   } catch (error) {
     console.error("Erreur lors de la vérification du like:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.get("/api/videos/:id/comments", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const comments = await db.all(
+      `SELECT c.*, u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt 
+       FROM comments c
+       INNER JOIN users u ON c.user_auth0_id = u.auth0_id
+       WHERE c.video_id = ?
+       ORDER BY c.created_at DESC`,
+      [id]
+    );
+    
+    res.json(comments);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des commentaires:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.post("/api/videos/:id/comments", checkJwt, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const user_auth0_id = req.auth.payload.sub;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Le commentaire ne peut pas être vide" });
+    }
+
+    const video = await db.get("SELECT * FROM videos WHERE id = ?", [id]);
+    if (!video) {
+      return res.status(404).json({ error: "Vidéo non trouvée" });
+    }
+
+    const result = await db.run(
+      `INSERT INTO comments (user_auth0_id, video_id, content)
+       VALUES (?, ?, ?)`,
+      [user_auth0_id, id, content.trim()]
+    );
+
+    const comment = await db.get(
+      `SELECT c.*, u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt 
+       FROM comments c
+       INNER JOIN users u ON c.user_auth0_id = u.auth0_id
+       WHERE c.id = ?`,
+      [result.lastID]
+    );
+
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du commentaire:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.delete("/api/comments/:commentId", checkJwt, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const user_auth0_id = req.auth.payload.sub;
+
+    const comment = await db.get(
+      "SELECT * FROM comments WHERE id = ?",
+      [commentId]
+    );
+
+    if (!comment) {
+      return res.status(404).json({ error: "Commentaire non trouvé" });
+    }
+
+    if (comment.user_auth0_id !== user_auth0_id) {
+      return res.status(403).json({ error: "Vous n'avez pas la permission de supprimer ce commentaire" });
+    }
+
+    await db.run(
+      "DELETE FROM comments WHERE id = ?",
+      [commentId]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Erreur lors de la suppression du commentaire:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
