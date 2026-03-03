@@ -24,7 +24,6 @@ const db = {
   Comment: CommentModel(sequelize),
 };
 
-// Définir les associations
 db.User.hasMany(db.Video, { foreignKey: 'owner_auth0_id', sourceKey: 'auth0_id' });
 db.Video.belongsTo(db.User, { foreignKey: 'owner_auth0_id', targetKey: 'auth0_id' });
 
