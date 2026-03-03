@@ -40,12 +40,12 @@
         <div class="comment-header">
           <div class="author-section">
             <div class="author-avatar">
-              <VideoAuthor :author="comment" :showName="false" />
+              <VideoAuthor :author="comment.User" :showName="false" />
             </div>
 
             <div class="author-info">
               <div class="pseudo">
-                {{ comment.pseudo || comment.name || 'Anonyme' }}
+                {{ comment.User?.pseudo || comment.User?.name || 'Anonyme' }}
               </div>
               <div class="comment-date">
                 {{ formatDate(comment.created_at) }}

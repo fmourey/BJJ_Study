@@ -579,6 +579,44 @@ app.delete("/api/comments/:commentId", checkJwt, async (req, res) => {
   }
 });
 
+// Published videos of any user
+app.get("/api/users/:auth0_id/videos/published", async (req, res) => {
+  try {
+    const { auth0_id } = req.params;
+
+    const videos = await db.Video.findAll({
+      where: { owner_auth0_id: auth0_id },
+      order: [['created_at', 'DESC']]
+    });
+
+    res.json(videos);
+  } catch (error) {
+    console.error("Error fetching published videos:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Liked videos of any user
+app.get("/api/users/:auth0_id/videos/liked", async (req, res) => {
+  try {
+    const { auth0_id } = req.params;
+
+    const videos = await db.Video.findAll({
+      include: {
+        model: db.VideoLike,
+        where: { user_auth0_id: auth0_id },
+        attributes: []
+      },
+      order: [[db.VideoLike, 'created_at', 'DESC']]
+    });
+
+    res.json(videos);
+  } catch (error) {
+    console.error("Error fetching liked videos:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // Get positions
 app.get("/api/positions", async (req, res) => {
   try {
