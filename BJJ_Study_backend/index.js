@@ -188,7 +188,7 @@ app.get("/api/videos/:id/author", async (req, res) => {
     }
     
     const author = await db.get(
-      "SELECT id, name, surname, pseudo, profile_photo, bjj_belt FROM users WHERE auth0_id = ?",
+      "SELECT auth0_id, id, name, surname, pseudo, profile_photo, bjj_belt FROM users WHERE auth0_id = ?",
       [video.owner_auth0_id]
     );
     
@@ -392,8 +392,11 @@ app.put("/api/users/profile", checkJwt, async (req, res) => {
     const auth0_id = req.auth.payload.sub
     const email = bodyEmail || req.auth.payload.email
 
+    if (req.body.auth0_id && req.body.auth0_id !== auth0_id) {
+      return res.status(403).json({ error: "Forbidden" })
+    }
     if (!name) {
-      return res.status(400).json({ error: "Le prénom est requis" })
+      return res.status(400).json({ error: "The name is required" })
     }
 
     const existingUser = await db.get(
@@ -461,6 +464,27 @@ app.get("/api/users/videos/liked", checkJwt, async (req, res) => {
     res.json(videos);
   } catch (error) {
     console.error("Erreur lors de la récupération des vidéos likées:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.get("/api/users/:auth0_id", async (req, res) => {
+  try {
+    const { auth0_id } = req.params;
+    console.log("GET /api/users/:auth0_id ->", auth0_id);
+
+    const user = await db.get(
+      `SELECT auth0_id, name, surname, pseudo, birthdate, profile_photo, bjj_club, bjj_belt, bjj_city
+       FROM users
+       WHERE auth0_id = ?`,
+      [auth0_id]
+    );
+
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    res.json(user);
+  } catch (e) {
+    console.error(e);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -534,13 +558,16 @@ app.get("/api/videos/:id/is-liked", checkJwt, async (req, res) => {
 app.get("/api/videos/:id/comments", async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const comments = await db.all(
-      `SELECT c.*, u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt 
-       FROM comments c
-       INNER JOIN users u ON c.user_auth0_id = u.auth0_id
-       WHERE c.video_id = ?
-       ORDER BY c.created_at DESC`,
+      `SELECT
+        c.*,
+        u.auth0_id AS auth0_id,
+        u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt
+      FROM comments c
+      INNER JOIN users u ON c.user_auth0_id = u.auth0_id
+      WHERE c.video_id = ?
+      ORDER BY c.created_at DESC`,
       [id]
     );
     
@@ -573,10 +600,13 @@ app.post("/api/videos/:id/comments", checkJwt, async (req, res) => {
     );
 
     const comment = await db.get(
-      `SELECT c.*, u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt 
-       FROM comments c
-       INNER JOIN users u ON c.user_auth0_id = u.auth0_id
-       WHERE c.id = ?`,
+      `SELECT
+        c.*,
+        u.auth0_id AS auth0_id,
+        u.name, u.surname, u.pseudo, u.profile_photo, u.bjj_belt
+      FROM comments c
+      INNER JOIN users u ON c.user_auth0_id = u.auth0_id
+      WHERE c.id = ?`,
       [result.lastID]
     );
 

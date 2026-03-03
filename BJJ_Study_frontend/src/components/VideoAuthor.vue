@@ -1,9 +1,34 @@
 <template>
-  <div class="video-author">
+  <button
+    v-if="authorId"
+    class="video-author-btn"
+    type="button"
+    @click="goToProfile"
+  >
+    <div class="video-author">
       <div
         class="avatar"
         :style="beltColor ? { borderColor: beltColor } : undefined"
       >
+        <img
+          v-if="author?.profile_photo"
+          :src="author.profile_photo"
+          :alt="author.pseudo"
+        />
+        <span v-else>
+          {{ getInitials(author?.name, author?.surname) }}
+        </span>
+      </div>
+      <div v-if="showName" class="pseudo">
+        {{ author?.pseudo || author?.name || 'Anonyme' }}
+      </div>
+    </div>
+  </button>
+  <div v-else class="video-author">
+    <div
+      class="avatar"
+      :style="beltColor ? { borderColor: beltColor } : undefined"
+    >
       <img
         v-if="author?.profile_photo"
         :src="author.profile_photo"
@@ -13,7 +38,6 @@
         {{ getInitials(author?.name, author?.surname) }}
       </span>
     </div>
-
     <div v-if="showName" class="pseudo">
       {{ author?.pseudo || author?.name || 'Anonyme' }}
     </div>
@@ -21,8 +45,13 @@
 </template>
 
 <script setup>
+
+
 import { computed } from "vue"
+import { useRouter } from "vue-router"
 import { getInitials } from "../composables/useVideoInfo"
+
+const router = useRouter()
 
 const props = defineProps({
   author: {
@@ -35,6 +64,7 @@ const props = defineProps({
   }
 })
 
+
 const beltColor = computed(() => {
   const belt = props.author?.bjj_belt
   if (!belt) return null
@@ -46,7 +76,16 @@ const beltColor = computed(() => {
     noire: "#111827"
   }[belt] || null
 })
-console.log("belt =", props.author?.pseudo, props.author?.bjj_belt)
+
+const authorId = computed(() =>
+  props.author?.auth0_id ?? props.author?.user_auth0_id ?? null
+)
+
+function goToProfile() {
+  if (!authorId.value) return
+  router.push({ name: "user-profile", params: { auth0_id: authorId.value } }).catch(() => {})
+}
+
 </script>
 
 <style scoped>
@@ -85,4 +124,13 @@ console.log("belt =", props.author?.pseudo, props.author?.bjj_belt)
   text-align: center;
 }
 
+/* Rend le bouton visuellement neutre */
+.video-author-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline;
+}
 </style>

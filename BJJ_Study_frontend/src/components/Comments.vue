@@ -5,6 +5,7 @@
     <div v-if="isAuthenticated" class="add-comment block">
       <div class="comment-input-wrapper">
         <VideoAuthor
+          v-if="userProfile"
           :author="userProfile"
         />
 
