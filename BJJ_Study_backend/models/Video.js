@@ -26,7 +26,7 @@ export default (sequelize) => {
     tableName: 'videos',
     timestamps: true,
     createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    updatedAt: false,
   });
 
   return Video;
