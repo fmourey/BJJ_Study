@@ -1,0 +1,30 @@
+import { DataTypes } from 'sequelize';
+
+export default (sequelize) => {
+  const Comment = sequelize.define('Comment', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    user_auth0_id: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    video_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+  }, {
+    tableName: 'comments',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  });
+
+  return Comment;
+};

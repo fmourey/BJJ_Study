@@ -27,7 +27,7 @@
               </p>
             </div>
 
-            <button class="btn btn-ghost" @click="startEdit">
+            <button v-if="canEdit" class="btn btn-ghost" @click="startEdit">
               Modifier
             </button>
           </div>
@@ -57,7 +57,7 @@
 
         </div>
 
-        <form v-else @submit.prevent="saveProfile" class="edit-grid">
+        <form v-else-if="canEdit" @submit.prevent="saveProfile" class="edit-grid">
 
           <div class="field">
             <label>Name</label>
@@ -123,6 +123,10 @@
 
         </form>
 
+        <div v-else class="state state-error">
+          You don't have permission to edit this profile.
+        </div>
+
       </section>
 
       <div class="card profile-studies">
@@ -166,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, watch } from "vue"
 import { useAuth0 } from "@auth0/auth0-vue"
 import { useRouter, useRoute } from "vue-router"
 import Header from "@/components/Header.vue"
@@ -188,6 +192,15 @@ const saving = ref(false)
 const publishedVideos = ref([])
 const likedVideos = ref([])
 const view = ref("published")
+
+watch(
+  () => route.params.auth0_id,
+  () => {
+    loading.value = true
+    error.value = ""
+    fetchProfile()
+  }
+)
 
 // Determine if we're viewing the current user's profile
 const isOwnProfile = computed(() => {
@@ -226,6 +239,7 @@ const age = computed(() => {
 })
 
 function startEdit() {
+  if (!canEdit.value) return
   form.value = { ...user.value }
   editing.value = true
 }
@@ -236,7 +250,7 @@ function cancelEdit() {
 
 async function fetchProfile() {
   try {
-    const userId = route.params.userId
+    const userId = route.params.auth0_id
 
     if (userId && userId !== currentUser.value?.sub) {
       // Fetching another user's public profile
