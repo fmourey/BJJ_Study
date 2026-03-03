@@ -378,7 +378,7 @@ app.get("/api/users/videos/published", checkJwt, async (req, res) => {
 
     const videos = await db.Video.findAll({
       where: { owner_auth0_id: auth0_id },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     res.json(videos);
@@ -399,7 +399,7 @@ app.get("/api/users/videos/liked", checkJwt, async (req, res) => {
         where: { user_auth0_id: auth0_id },
         attributes: []
       },
-      order: [[db.VideoLike, 'createdAt', 'DESC']]
+      order: [[db.VideoLike, 'created_at', 'DESC']]
     });
 
     res.json(videos);
@@ -507,7 +507,7 @@ app.get("/api/videos/:id/comments", async (req, res) => {
         attributes: ['auth0_id', 'name', 'surname', 'pseudo', 'profile_photo', 'bjj_belt'],
         required: true
       },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     res.json(comments);
