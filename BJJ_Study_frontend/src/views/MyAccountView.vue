@@ -282,19 +282,25 @@ async function fetchProfile() {
 }
 
 async function fetchVideos() {
-  const token = await getAccessTokenSilently()
+  try {
+    const userId = route.params.auth0_id || currentUser.value.sub;
 
-  const [pub, liked] = await Promise.all([
-    fetch(`${API_BASE_URL}/api/users/videos/published`, {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch(`${API_BASE_URL}/api/users/videos/liked`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
+    const [pub, liked] = await Promise.all([
+      fetch(`${API_BASE_URL}/api/users/${userId}/videos/published`),
+      fetch(`${API_BASE_URL}/api/users/${userId}/videos/liked`)
+    ]);
 
-  if (pub.ok) publishedVideos.value = await pub.json()
-  if (liked.ok) likedVideos.value = await liked.json()
+    if (pub.ok) {
+      publishedVideos.value = await pub.json();
+    }
+
+    if (liked.ok) {
+      likedVideos.value = await liked.json();
+    }
+
+  } catch (error) {
+    console.error("Erreur récupération vidéos :", error);
+  }
 }
 
 async function saveProfile() {
