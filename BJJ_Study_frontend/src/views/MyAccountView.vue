@@ -262,6 +262,16 @@ async function fetchProfile() {
       const res = await fetch(`${API_BASE_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
+            if (res.status === 404) {
+        user.value = {
+          auth0_id: currentUser.value.sub,
+          name: currentUser.value.name || "",
+          email: currentUser.value.email || ""
+        }
+        editing.value = true
+        return
+      }
+
       user.value = await res.json()
     }
   } catch (e) {
