@@ -6,6 +6,8 @@ import { auth } from "express-oauth2-jwt-bearer";
 import { Op } from "sequelize";
 import db from "./models/index.js";
 
+await db.sequelize.sync({ force: true });
+
 dotenv.config();
 
 const app = express();
