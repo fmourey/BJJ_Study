@@ -8,6 +8,11 @@ vi.mock('@auth0/auth0-vue', () => ({
   useAuth0: vi.fn()
 }))
 
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal()
+  return { ...actual, useRouter: vi.fn(() => ({ push: vi.fn() })) }
+})
+
 describe('Header.vue', () => {
   const mockUseAuth0 = vi.mocked(useAuth0)
 
@@ -21,10 +26,9 @@ describe('Header.vue', () => {
       logout: vi.fn(),
       isAuthenticated: ref(false)
     })
-
     const wrapper = mount(Header)
     expect(wrapper.find('.header').exists()).toBe(true)
-    expect(wrapper.find('.home').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Home')
   })
 
   describe('When user is NOT authenticated', () => {
@@ -38,22 +42,22 @@ describe('Header.vue', () => {
 
     it('should display Login button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.login').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Login')
     })
 
     it('should display Register button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.register').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Sign Up')
     })
 
     it('should NOT display Logout button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.logout').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('Logout')
     })
 
     it('should NOT display My Account button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.myaccount').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('My Profile')
     })
   })
 
@@ -68,22 +72,22 @@ describe('Header.vue', () => {
 
     it('should display Logout button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.logout').exists()).toBe(true)
+      expect(wrapper.text()).toContain('Logout')
     })
 
     it('should display My Account button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.myaccount').exists()).toBe(true)
+      expect(wrapper.text()).toContain('My Profile')
     })
 
     it('should NOT display Login button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.login').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('Login')
     })
 
     it('should NOT display Register button', () => {
       const wrapper = mount(Header)
-      expect(wrapper.find('.register').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('Sign Up')
     })
   })
 
@@ -93,10 +97,7 @@ describe('Header.vue', () => {
       logout: vi.fn(),
       isAuthenticated: ref(false)
     })
-
     const wrapper = mount(Header)
-    const homeBtn = wrapper.find('.home')
-    expect(homeBtn.exists()).toBe(true)
-    expect(homeBtn.text()).toBe('Accueil')
+    expect(wrapper.text()).toContain('Home')
   })
 })

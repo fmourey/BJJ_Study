@@ -45,6 +45,14 @@ describe('SearchVideoView - Complete Test Suite', () => {
     }
   ]
 
+  // Helper fetch qui répond aux deux endpoints possibles
+  const fetchAllVideos = (url) => {
+    if (url.includes('/api/videos') || url.includes('/api/search')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockVideos) })
+    }
+    return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+  }
+
   beforeEach(() => {
     global.fetch = vi.fn()
     vi.clearAllMocks()
@@ -53,51 +61,28 @@ describe('SearchVideoView - Complete Test Suite', () => {
   describe('Component structure and rendering', () => {
     it('should render with header component', async () => {
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([])
-        })
+        Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
       )
-
       const wrapper = mount(SearchVideoView, {
-        global: {
-          stubs: {
-            Header: true,
-            Search: true,
-            VideoCard: true
-          }
-        }
+        global: { stubs: { Header: true, Search: true, VideoCard: true } }
       })
-
       expect(wrapper.exists()).toBe(true)
     })
 
     it('should display search container', async () => {
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([])
-        })
+        Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
       )
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      // Check for main content area
       expect(wrapper.text()).toBeTruthy()
     })
   })
 
   describe('Initial video loading', () => {
     it('should load and display all videos on mount', async () => {
-      global.fetch = vi.fn((url) => {
-        if (url.includes('/api/search')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockVideos)
-          })
-        }
-      })
+      // Le fetch initial sans filtre va sur /api/videos, pas /api/search
+      global.fetch = vi.fn(fetchAllVideos)
 
       const wrapper = mount(SearchVideoView)
       await flushPromises()
@@ -108,30 +93,17 @@ describe('SearchVideoView - Complete Test Suite', () => {
 
     it('should handle empty video list', async () => {
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([])
-        })
+        Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
       )
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      const videoCards = wrapper.findAllComponents(VideoCard)
-      expect(videoCards.length).toBe(0)
+      expect(wrapper.findAllComponents(VideoCard).length).toBe(0)
     })
 
     it('should pass video data correctly to VideoCard', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockVideos)
-        })
-      )
-
+      global.fetch = vi.fn(fetchAllVideos)
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
       const firstCard = wrapper.findAllComponents(VideoCard)[0]
       expect(firstCard.props('video').title).toBe('Kimura Setup from Guard')
       expect(firstCard.props('video').id).toBe(1)
@@ -140,21 +112,8 @@ describe('SearchVideoView - Complete Test Suite', () => {
 
   describe('Video filtering and search', () => {
     it('should filter videos when search changes', async () => {
-      let isFirstCall = true
-      global.fetch = vi.fn(() => {
-        if (isFirstCall) {
-          isFirstCall = false
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockVideos)
-          })
-        }
-        // Second call returns filtered results
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([mockVideos[0]])
-        })
-      })
+      // Le premier appel (sans filtre) va sur /api/videos
+      global.fetch = vi.fn(fetchAllVideos)
 
       const wrapper = mount(SearchVideoView)
       await flushPromises()
@@ -162,144 +121,80 @@ describe('SearchVideoView - Complete Test Suite', () => {
       let videoCards = wrapper.findAllComponents(VideoCard)
       expect(videoCards.length).toBe(3)
 
-      // Would trigger another fetch after search updates
       await flushPromises()
     })
 
     it('should filter by position correctly', async () => {
       global.fetch = vi.fn((url) => {
         if (url.includes('position=Closed')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve([mockVideos[2]])
-          })
+          return Promise.resolve({ ok: true, json: () => Promise.resolve([mockVideos[2]]) })
         }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockVideos)
-        })
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockVideos) })
       })
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      const videoCards = wrapper.findAllComponents(VideoCard)
-      expect(videoCards.length).toBeGreaterThan(0)
+      expect(wrapper.findAllComponents(VideoCard).length).toBeGreaterThan(0)
     })
 
     it('should filter by tags correctly', async () => {
       global.fetch = vi.fn((url) => {
         if (url.includes('tags=kimura')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve([mockVideos[0]])
-          })
+          return Promise.resolve({ ok: true, json: () => Promise.resolve([mockVideos[0]]) })
         }
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockVideos)
-        })
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockVideos) })
       })
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
       expect(wrapper.findAllComponents(VideoCard).length).toBeGreaterThan(0)
     })
   })
 
   describe('Error handling', () => {
     it('should handle network errors gracefully', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.reject(new Error('Network error'))
-      )
-
+      global.fetch = vi.fn(() => Promise.reject(new Error('Network error')))
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      // Should not crash, should still mount
       expect(wrapper.exists()).toBe(true)
     })
 
     it('should handle API errors (non-200 status)', async () => {
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          status: 500,
-          json: () => Promise.resolve({ error: 'Server error' })
-        })
+        Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({ error: 'Server error' }) })
       )
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      // Should not crash
       expect(wrapper.exists()).toBe(true)
-      const videoCards = wrapper.findAllComponents(VideoCard)
-      expect(videoCards.length).toBe(0)
+      expect(wrapper.findAllComponents(VideoCard).length).toBe(0)
     })
 
     it('should handle malformed video data', async () => {
-      const malformedVideos = [
-        {
-          id: 1,
-          title: 'Missing properties video'
-          // Missing other required properties
-        },
-        mockVideos[0]
-      ]
-
+      const malformedVideos = [{ id: 1, title: 'Missing properties video' }, mockVideos[0]]
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(malformedVideos)
-        })
+        Promise.resolve({ ok: true, json: () => Promise.resolve(malformedVideos) })
       )
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      const videoCards = wrapper.findAllComponents(VideoCard)
-      expect(videoCards.length).toBe(2)
+      expect(wrapper.findAllComponents(VideoCard).length).toBe(2)
     })
   })
 
   describe('Performance and scaling', () => {
     it('should handle large number of videos', async () => {
-      const manyVideos = Array.from({ length: 50 }, (_, i) => ({
-        ...mockVideos[0],
-        id: i + 1,
-        title: `Video ${i + 1}`
-      }))
-
+      const manyVideos = Array.from({ length: 50 }, (_, i) => ({ ...mockVideos[0], id: i + 1, title: `Video ${i + 1}` }))
       global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(manyVideos)
-        })
+        Promise.resolve({ ok: true, json: () => Promise.resolve(manyVideos) })
       )
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
-      const videoCards = wrapper.findAllComponents(VideoCard)
-      expect(videoCards.length).toBe(50)
+      expect(wrapper.findAllComponents(VideoCard).length).toBe(50)
     })
 
     it('should display videos in proper grid layout', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockVideos)
-        })
-      )
-
+      global.fetch = vi.fn(fetchAllVideos)
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
       const videoCards = wrapper.findAllComponents(VideoCard)
       expect(videoCards.length).toBeGreaterThan(0)
-      // All cards should be rendered
       videoCards.forEach((card) => {
         expect(card.props('video')).toBeDefined()
         expect(card.props('video').id).toBeDefined()
@@ -309,17 +204,10 @@ describe('SearchVideoView - Complete Test Suite', () => {
 
   describe('Data refresh and updates', () => {
     it('should allow manual refresh of video list', async () => {
-      const mockFetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockVideos)
-        })
-      )
+      const mockFetch = vi.fn(fetchAllVideos)
       global.fetch = mockFetch
-
       const wrapper = mount(SearchVideoView)
       await flushPromises()
-
       expect(mockFetch).toHaveBeenCalled()
     })
   })

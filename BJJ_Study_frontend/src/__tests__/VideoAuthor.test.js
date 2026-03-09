@@ -3,6 +3,15 @@ import { mount } from '@vue/test-utils'
 import VideoAuthor from '../components/VideoAuthor.vue'
 import { getInitials } from '../composables/useVideoInfo'
 
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    useRouter: vi.fn(() => ({ push: vi.fn() })),
+    useRoute: vi.fn(() => ({ params: {} }))
+  }
+})
+
 describe('VideoAuthor.vue', () => {
   const mockAuthor = {
     id: 1,
@@ -14,91 +23,57 @@ describe('VideoAuthor.vue', () => {
 
   describe('Component rendering', () => {
     it('should render author component', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
       expect(wrapper.find('.video-author').exists()).toBe(true)
     })
 
     it('should display author pseudo when available', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
       expect(wrapper.text()).toContain('jeandupont')
     })
 
     it('should display author name as fallback', () => {
-      const author = {
-        ...mockAuthor,
-        pseudo: null
-      }
-
       const wrapper = mount(VideoAuthor, {
-        props: { author }
+        props: { author: { ...mockAuthor, pseudo: null } }
       })
-
-      // Should fall back to name
       expect(wrapper.text()).toContain('Jean')
     })
   })
 
   describe('Profile photo handling', () => {
     it('should display profile photo when available', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
       const img = wrapper.find('img')
       expect(img.exists()).toBe(true)
       expect(img.attributes('src')).toBe(mockAuthor.profile_photo)
     })
 
     it('should display initials placeholder when no photo', () => {
-      const author = {
-        ...mockAuthor,
-        profile_photo: null
-      }
-
       const wrapper = mount(VideoAuthor, {
-        props: { author }
+        props: { author: { ...mockAuthor, profile_photo: null } }
       })
-
-      const placeholder = wrapper.find('.author-photo-placeholder')
+      // Le composant utilise .avatar > span comme placeholder d'initiales
+      const placeholder = wrapper.find('.avatar span')
       expect(placeholder.exists()).toBe(true)
       expect(placeholder.text()).toContain('JD')
     })
 
     it('should have correct alt text for accessibility', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
-      const img = wrapper.find('img')
-      expect(img.attributes('alt')).toBe(mockAuthor.pseudo)
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
+      expect(wrapper.find('img').attributes('alt')).toBe(mockAuthor.pseudo)
     })
   })
 
   describe('Author fallback text', () => {
     it('should display Anonyme when author is null', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: null }
-      })
-
+      const wrapper = mount(VideoAuthor, { props: { author: null } })
       expect(wrapper.text()).toContain('Anonyme')
     })
 
     it('should display pseudo preferentially', () => {
-      const author = {
-        name: 'Jean',
-        pseudo: 'jeandupont'
-      }
-
       const wrapper = mount(VideoAuthor, {
-        props: { author }
+        props: { author: { name: 'Jean', pseudo: 'jeandupont' } }
       })
-
       expect(wrapper.text()).toContain('jeandupont')
       expect(wrapper.text()).not.toContain('Jean')
     })
@@ -118,58 +93,39 @@ describe('VideoAuthor.vue', () => {
     })
 
     it('should display generated initials in placeholder', () => {
-      const author = {
-        name: 'Pierre',
-        surname: 'Martin',
-        pseudo: 'pierre.martin',
-        profile_photo: null
-      }
-
       const wrapper = mount(VideoAuthor, {
-        props: { author }
+        props: {
+          author: { name: 'Pierre', surname: 'Martin', pseudo: 'pierre.martin', profile_photo: null }
+        }
       })
-
-      const placeholder = wrapper.find('.author-photo-placeholder')
-      expect(placeholder.text()).toBe('PM')
+      const placeholder = wrapper.find('.avatar span')
+      expect(placeholder.exists()).toBe(true)
+      expect(placeholder.text().trim()).toBe('PM')
     })
   })
 
   describe('Styling and layout', () => {
     it('should have correct structure with photo and pseudo', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
-      expect(wrapper.find('.author-photo').exists()).toBe(true)
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
+      // Le composant utilise .avatar (pas .author-photo) et .pseudo
+      expect(wrapper.find('.avatar').exists()).toBe(true)
       expect(wrapper.find('.pseudo').exists()).toBe(true)
     })
 
     it('should display author info horizontally', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: mockAuthor }
-      })
-
-      const container = wrapper.find('.video-author')
-      // Check that it has flex display (from CSS class)
-      expect(container.classes()).toBeDefined()
+      const wrapper = mount(VideoAuthor, { props: { author: mockAuthor } })
+      expect(wrapper.find('.video-author').classes()).toBeDefined()
     })
   })
 
   describe('Default props', () => {
     it('should handle undefined author gracefully', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: { author: undefined }
-      })
-
+      const wrapper = mount(VideoAuthor, { props: { author: undefined } })
       expect(wrapper.text()).toContain('Anonyme')
     })
 
     it('should use default null author when not provided', () => {
-      const wrapper = mount(VideoAuthor, {
-        props: {}
-      })
-
-      // Should render something without errors
+      const wrapper = mount(VideoAuthor, { props: {} })
       expect(wrapper.exists()).toBe(true)
     })
   })
