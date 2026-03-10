@@ -15,15 +15,6 @@
         >
           YouTube
         </button>
-
-        <button
-          type="button"
-          class="btn"
-          :class="activeTab === 'local' ? 'btn-primary' : 'btn-ghost'"
-          @click="switchTab('local')"
-        >
-          Local
-        </button>
       </div>
 
       <div class="video-preview block">
@@ -58,31 +49,9 @@
           Invalid YouTube URL
         </div>
 
-        <button
-          v-if="activeTab === 'local' && localThumbnail && !showLocalPlayer"
-          type="button"
-          class="thumb"
-          @click="playLocal"
-          aria-label="Lire la vidéo locale"
-        >
-          <img class="thumb-img" :src="localThumbnail" alt="Miniature locale" />
-          <span class="thumb-play">▶</span>
-        </button>
-
-        <video
-          v-if="activeTab === 'local' && showLocalPlayer && videoFile"
-          ref="localVideoPlayer"
-          class="video-frame"
-          controls
-          :src="localVideoUrl"
-          @loadedmetadata="seekLocalVideo"
-        ></video>
-
         <div
           v-if="
-            (activeTab === 'youtube' && !youtubeUrl && !youtubeVideoId && !showYoutubePlayer) ||
-            (activeTab === 'local' && !localThumbnail && !showLocalPlayer)
-          "
+            (activeTab === 'youtube' && !youtubeUrl && !youtubeVideoId && !showYoutubePlayer)"
           class="state"
         >
           Video preview
@@ -97,17 +66,6 @@
           v-model="youtubeUrl"
           placeholder="https://youtube.com/watch?v=..."
           class="input"
-        />
-      </div>
-
-      <div class="field block" v-if="activeTab === 'local'">
-        <label for="videoFile">Local video file<span class="req">*</span></label>
-        <input
-          id="videoFile"
-          type="file"
-          accept="video/*"
-          class="input"
-          @change="handleFileChange"
         />
       </div>
 
@@ -202,8 +160,6 @@ const { getAccessTokenSilently, loginWithRedirect } = useAuth0()
 const activeTab = ref('youtube')
 const youtubeUrl = ref('')
 const videoFile = ref(null)
-const localThumbnail = ref(null)
-const localVideoUrl = ref(null)
 const title = ref('')
 const position = ref(null)
 const tags = ref('')
@@ -216,8 +172,6 @@ const description = ref('')
 const router = useRouter()
 
 const showYoutubePlayer = ref(false)
-const showLocalPlayer = ref(false)
-const localVideoPlayer = ref(null)
 
 // YouTube ID extraction
 const youtubeVideoId = computed(() => {
@@ -241,76 +195,8 @@ watch(youtubeUrl, () => {
   showYoutubePlayer.value = false
 })
 
-function switchTab(tab) {
-  activeTab.value = tab
-  showYoutubePlayer.value = false
-  showLocalPlayer.value = false
-  localThumbnail.value = null
-  localVideoUrl.value = null
-  videoFile.value = null
-}
-
 function playYoutube() {
   showYoutubePlayer.value = true
-}
-
-function playLocal() {
-  showLocalPlayer.value = true
-}
-
-function seekLocalVideo() {
-  const start = timeToSeconds(startTime.value)
-  const end = timeToSeconds(endTime.value)
-  if (localVideoPlayer.value && start > 0) {
-    localVideoPlayer.value.currentTime = start
-  }
-  if (end > 0 && localVideoPlayer.value) {
-    localVideoPlayer.value.addEventListener('timeupdate', () => {
-      if (localVideoPlayer.value.currentTime >= end) {
-        localVideoPlayer.value.pause()
-      }
-    })
-  }
-}
-
-function handleFileChange(event) {
-  const file = event.target.files[0]
-  if (file && file.type.startsWith('video/')) {
-    videoFile.value = file
-    localVideoUrl.value = URL.createObjectURL(file)
-    showLocalPlayer.value = false
-    generateThumbnail(file)
-  } else {
-    videoFile.value = null
-    localThumbnail.value = null
-    localVideoUrl.value = null
-  }
-}
-
-function generateThumbnail(file) {
-  const video = document.createElement('video')
-  video.preload = 'metadata'
-  video.src = URL.createObjectURL(file)
-  video.muted = true
-  video.playsInline = true
-
-  video.onloadedmetadata = () => {
-    video.currentTime = Math.min(2, video.duration)
-  }
-
-  video.onseeked = () => {
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    localThumbnail.value = canvas.toDataURL('image/jpeg', 0.85)
-    URL.revokeObjectURL(video.src)
-  }
-
-  video.onerror = () => {
-    localThumbnail.value = null
-  }
 }
 
 function extractYouTubeId(urlString) {
@@ -376,62 +262,6 @@ function selectDifficulty(level) {
   isDifficultyOpen.value = false
 }
 
-/*function handleSubmit() {
-  if (activeTab.value === 'youtube' && !youtubeUrl.value) {
-    alert('Veuillez entrer une URL YouTube')
-    return
-  }
-  if (activeTab.value === 'local' && !videoFile.value) {
-    alert('Veuillez sélectionner un fichier vidéo')
-    return
-  }
-  if (!title.value) {
-    alert('Veuillez entrer un titre')
-    return
-  }
-
-  const videoId = youtubeVideoId.value
-  const startSeconds = timeToSeconds(startTime.value)
-  const endSeconds = timeToSeconds(endTime.value)
-
-  const data = {
-    source: activeTab.value,
-    youtubeUrl: youtubeUrl.value,
-    title: title.value,
-    position: position.value,
-    tags: tags.value.split(',').map(x => x.trim()).filter(Boolean),
-    startTime: startTime.value,
-    endTime: endTime.value,
-    startTimeSeconds: startSeconds,
-    endTimeSeconds: endSeconds,
-    duration: endSeconds - startSeconds,
-    difficulty: difficulty.value,
-    description: description.value,
-    videoId,
-    thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : localThumbnail.value,
-    uploadDate: new Date().toISOString()
-  }
-
-  console.log('Form data:', data)
-  alert('Vidéo soumise avec succès !')
-
-  // Reset
-  youtubeUrl.value = ''
-  videoFile.value = null
-  localThumbnail.value = null
-  localVideoUrl.value = null
-  title.value = ''
-  position.value = ''
-  tags.value = ''
-  startTime.value = ''
-  endTime.value = ''
-  difficulty.value = ''
-  description.value = ''
-  showYoutubePlayer.value = false
-  showLocalPlayer.value = false
-  activeTab.value = 'youtube'
-
-*/
 async function handleSubmit() {
   // Validation frontend
   if (activeTab.value === 'youtube' && !youtubeUrl.value) {

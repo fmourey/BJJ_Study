@@ -1,11 +1,12 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Charger les variables d'environnement pour les tests
  */
-// require('dotenv').config();
+const envFile = process.env.CI ? '.env' : '.env.test'
+dotenv.config({ path: envFile, override: true })
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -103,7 +104,7 @@ export default defineConfig({
      * Use the preview server on CI for more realistic testing.
      * Playwright will re-use the local server if there is already a dev-server running.
      */
-    command: process.env.CI ? 'npm run preview' : 'npm run dev',
+    command: process.env.CI ? 'npm run preview' : 'npm run dev:test',
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
   },
