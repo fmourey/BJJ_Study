@@ -2,12 +2,12 @@
   <div v-if="!hasConsent" class="cookie-banner">
     <div class="cookie-content">
       <p>
-        Ce site utilise des cookies pour améliorer votre expérience. 
-        <a href="/privacy" target="_blank">En savoir plus</a>
+        This website uses cookies to improve your experience.
+        <a href="/privacy" target="_blank">Learn more</a>
       </p>
       <div class="cookie-buttons">
-        <button @click="refuse" class="btn-refuse">Refuser</button>
-        <button @click="accept" class="btn-accept">Accepter</button>
+        <button @click="refuse" class="btn-refuse">Refuse</button>
+        <button @click="accept" class="btn-accept">Accept</button>
       </div>
     </div>
   </div>
