@@ -149,7 +149,7 @@ L'authentification est gérée par **Auth0**, une plateforme de gestion d'identi
 
 ### Configuration Auth0
 Pour plus d'informations sur la configuration d'Auth0 :
-- [Documentation Auth0 - Vue 3](https://auth0.com/docs/quickstart/spa/vue)
+- [Documentation Auth0 - Vue 3](https://auth0.com/docs/quickstart/spa/vuejs)
 - [Fiche technique - Auth0](/Auth0_fiche_technique.md)
 
 ---
