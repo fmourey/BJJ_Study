@@ -2,7 +2,7 @@
   <Header />
   <div class="container">
     <div class="presentation">
-      <h1>Welcome to BJJ Study !!!!!!</h1>
+      <h1>Welcome to BJJ Study !!</h1>
       <p>BJJ Study is a platform created by Brazilian Jiu-Jitsu enthusiasts for practitioners of all levels. Our aim is to facilitate learning and technical progression through video analysis, experience sharing and collaboration between members of the community.
 Here, users can review their fights, discover new techniques, take part in challenges and follow the latest news from the world of JJB.
 BJJ Study is much more than an analysis tool: it's a space for exchange and progression for all those who want to understand, learn and improve on the tatami.</p>
